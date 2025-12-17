@@ -1,0 +1,161 @@
+{
+    "scenarios": [
+        {
+            "id": "heavy_traffic",
+            "name": "Heavy Traffic Test",
+            "description": "High traffic load test with many simultaneous requests",
+            "building": {
+                "num_floors": 10,
+                "num_elevators": 3
+            },
+            "traffic": {
+                "enabled": true,
+                "automatic": true
+            },
+            "duration_seconds": 120,
+            "monitoring": {
+                "enabled": true,
+                "interval_seconds": 10,
+                "show_stats": [
+                    "generated",
+                    "completed",
+                    "waiting",
+                    "avg_wait_time",
+                    "throughput"
+                ]
+            },
+            "show_elevator_performance": true,
+            "show_final_stats": true
+        },
+        {
+            "id": "scenario_1",
+            "name": "Basic Elevator Operation",
+            "description": "Basic elevator operation with manual requests",
+            "building": {
+                "num_floors": 8,
+                "num_elevators": 2
+            },
+            "manual_requests": [
+                {
+                    "from_floor": 1,
+                    "to_floor": 5
+                },
+                {
+                    "from_floor": 3,
+                    "to_floor": 7
+                },
+                {
+                    "from_floor": 2,
+                    "to_floor": 6
+                },
+                {
+                    "from_floor": 5,
+                    "to_floor": 1
+                },
+                {
+                    "from_floor": 7,
+                    "to_floor": 2
+                },
+                {
+                    "from_floor": 4,
+                    "to_floor": 8
+                }
+            ],
+            "request_delay": 0.5,
+            "duration_seconds": 30,
+            "monitoring": {
+                "enabled": true,
+                "interval_seconds": 5,
+                "show_stats": [
+                    "completed",
+                    "waiting",
+                    "avg_wait_time"
+                ]
+            },
+            "show_final_stats": true
+        },
+        {
+            "id": "scenario_2",
+            "name": "Rush Hour Traffic Simulation",
+            "description": "Rush hour simulation with automatic traffic generation",
+            "building": {
+                "num_floors": 12,
+                "num_elevators": 3
+            },
+            "traffic": {
+                "enabled": true,
+                "automatic": true
+            },
+            "duration_seconds": 45,
+            "monitoring": {
+                "enabled": true,
+                "interval_seconds": 5,
+                "show_stats": [
+                    "generated",
+                    "completed",
+                    "waiting",
+                    "avg_wait_time"
+                ]
+            },
+            "show_elevator_performance": true,
+            "show_final_stats": true
+        },
+        {
+            "id": "scenario_3",
+            "name": "Visual ASCII Display",
+            "description": "Quick visual demonstration with ASCII display",
+            "building": {
+                "num_floors": 6,
+                "num_elevators": 1
+            },
+            "manual_requests": [
+                {
+                    "from_floor": 1,
+                    "to_floor": 4
+                },
+                {
+                    "from_floor": 2,
+                    "to_floor": 5
+                },
+                {
+                    "from_floor": 4,
+                    "to_floor": 1
+                }
+            ],
+            "visualization": {
+                "enabled": true,
+                "type": "ascii",
+                "update_interval": 1.0,
+                "frames": 10
+            },
+            "duration_seconds": 10
+        },
+        {
+            "id": "quick_demo",
+            "name": "Quick Demonstration",
+            "description": "2-minute demonstration run from main.py demo mode",
+            "building": {
+                "num_floors": 15,
+                "num_elevators": 3
+            },
+            "traffic": {
+                "enabled": true,
+                "automatic": true
+            },
+            "duration_seconds": 120,
+            "monitoring": {
+                "enabled": true,
+                "interval_seconds": 30,
+                "show_stats": [
+                    "generated",
+                    "completed",
+                    "waiting",
+                    "avg_wait_time",
+                    "throughput"
+                ]
+            },
+            "show_final_stats": true
+        }
+    ],
+    "default_scenario": "quick_demo"
+}

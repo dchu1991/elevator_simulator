@@ -1,0 +1,83 @@
+{
+    "description": "Elevator simulation configuration - adjust these parameters to tune the system behavior",
+    "building": {
+        "num_floors": 20,
+        "num_elevators": 4,
+        "elevator_capacity": 8,
+        "elevator_speed": 2.0,
+        "floor_height_meters": 3.5
+    },
+    "strategy": {
+        "description": "Elevator assignment scoring weights (lower score = better choice)",
+        "distance_weight": 1.0,
+        "comment_distance": "Multiplier for distance score. Higher = distance matters more",
+        "full_penalty": 50,
+        "comment_full": "Penalty points when elevator is full (can't pick up)",
+        "same_direction_bonus": -5,
+        "comment_same_direction": "Bonus (negative) when elevator moving in same direction AND not too busy",
+        "opposite_direction_penalty": 20,
+        "comment_opposite_direction": "Penalty when elevator moving opposite direction",
+        "load_factor_weight": 20,
+        "comment_load_factor": "Weight for current load (0-20 based on % full). Higher = prefer emptier elevators",
+        "idle_bonus": -8,
+        "comment_idle": "Bonus for idle elevators (negative = prefer idle)"
+    },
+    "traffic": {
+        "base_arrival_rate": 20.0,
+        "comment_base": "People per minute during normal hours (increased for stress test)",
+        "rush_multiplier": 3.0,
+        "comment_rush": "Multiplier during morning/evening rush (8-10am, 5-7pm)",
+        "lunch_multiplier": 2.0,
+        "comment_lunch": "Multiplier during lunch rush (12-2pm)",
+        "night_multiplier": 0.2,
+        "comment_night": "Multiplier during night hours (11pm-6am)",
+        "enable_realistic_visitors": true,
+        "comment_visitors": "If true, mall visitors enter at floor 1, visit 20-120 mins, return to floor 1"
+    },
+    "simulation": {
+        "control_loop_interval_ms": 100,
+        "comment_control": "How often elevator controller checks state (milliseconds)",
+        "traffic_check_interval_s": 1.0,
+        "comment_traffic": "How often to check if new people should be generated (seconds)",
+        "movement_delay_factor": 0.5,
+        "comment_movement": "Delay factor for floor-to-floor movement (seconds / speed)",
+        "stats_recording_interval_s": 10.0,
+        "comment_stats": "How often to record statistics snapshot (seconds)"
+    },
+    "behavior": {
+        "allow_direction_change_when_empty": true,
+        "comment_direction": "If true, elevator can change direction when it has no passengers",
+        "prefer_nearest_call": true,
+        "comment_nearest": "If true, strongly prefer closest requests (current behavior)",
+        "max_wait_time_before_reassign_s": 300,
+        "comment_reassign": "If person waits longer than this, consider reassigning elevator (not implemented yet)",
+        "enable_load_balancing": true,
+        "comment_load_balance": "Consider load factor when selecting elevators"
+    },
+    "advanced_strategies": {
+        "description": "Advanced features you might want to implement",
+        "enable_destination_dispatch": false,
+        "comment_destination": "Future: Assign elevator when person enters destination (like modern buildings)",
+        "enable_zoning": false,
+        "zones": {
+            "low": [
+                1,
+                7
+            ],
+            "mid": [
+                8,
+                14
+            ],
+            "high": [
+                15,
+                20
+            ]
+        },
+        "comment_zoning": "Future: Dedicate elevators to specific floor ranges",
+        "enable_predictive_positioning": false,
+        "comment_predictive": "Future: Position idle elevators based on predicted demand",
+        "enable_energy_optimization": false,
+        "energy_weight": 0,
+        "comment_energy": "Future: Consider energy consumption in scoring (favor less movement)"
+    }
+}

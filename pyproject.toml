@@ -1,0 +1,39 @@
+[project]
+name = "elevator"
+version = "0.1.0"
+description = "A comprehensive elevator simulation system for multi-story malls with intelligent scheduling, realistic traffic patterns, and real-time visualization"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "pygame>=2.6.1",
+]
+
+[tool.setuptools]
+py-modules = ["elevator_simulator", "simulation_engine", "visualization", "main"]
+
+[dependency-groups]
+dev = [
+    "black>=24.8.0",
+    "ruff>=0.14.9",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = [""]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--cov=src",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]

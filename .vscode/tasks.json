@@ -1,0 +1,125 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run Pygame Demo",
+      "type": "shell",
+      "command": "uv run main.py pygame",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run ASCII Demo",
+      "type": "shell",
+      "command": "uv run main.py ascii",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Heavy Load Test",
+      "type": "shell",
+      "command": "uv run tests/test_heavy_load.py",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Verify Project Structure",
+      "type": "shell",
+      "command": "uv run tests/verify_structure.py",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Format Code (Black)",
+      "type": "shell",
+      "command": "uv run black src/ tests/ demos/ main.py",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint Code (Ruff)",
+      "type": "shell",
+      "command": "uv run ruff check src/ tests/ demos/ main.py",
+      "group": "none",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run All Tests (pytest)",
+      "type": "shell",
+      "command": "uv run pytest",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests with Coverage",
+      "type": "shell",
+      "command": "uv run pytest --cov=src --cov-report=term-missing --cov-report=html",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests (Fast)",
+      "type": "shell",
+      "command": "uv run pytest -m \"not slow\"",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
