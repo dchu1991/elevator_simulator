@@ -395,6 +395,16 @@ class SimulationEngine:
         self.stats_interval = 10.0  # Record stats every 10 seconds
         self.last_stats_time = 0
 
+    def __enter__(self):
+        """Enter context manager - returns self for use in with statement"""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit context manager - ensures simulation is stopped"""
+        if self.is_running:
+            self.stop_simulation()
+        return False  # Don't suppress exceptions
+
     def start_simulation(self):
         """Start the complete simulation"""
         if self.is_running:

@@ -220,7 +220,7 @@ class PygameVisualization:
         stats = self.simulation.get_current_statistics()
         print(
             f"Statistics: {stats['total_people_completed']} completed, "
-            f"avg wait: {stats['avg_wait_time']:.1f}s"
+            f"avg wait: {stats.get('avg_journey_time', 0):.1f}s"
         )
 
     def _get_elevator_at_position(self, mouse_pos: Tuple[int, int]) -> Optional[int]:
@@ -558,7 +558,7 @@ class PygameVisualization:
             f"Time: {stats.get('elapsed_time', 0):.1f}s | "
             f"Completed: {stats['total_people_completed']} | "
             f"Waiting: {stats['people_waiting']} | "
-            f"Avg Wait: {stats['avg_wait_time']:.1f}s | "
+            f"Avg Wait: {stats.get('avg_journey_time', 0):.1f}s | "
             f"Throughput: {stats['throughput']:.1f}/hour"
         )
 
@@ -582,25 +582,24 @@ def run_pygame_simulation(
     duration_minutes: int = 10,
     debug: bool = False,
 ):
-    """Run the pygame visualization"""
+    """Run the pygame visualization with context manager for clean resource handling"""
     print(
         f"Starting pygame visualization: {num_floors} floors, {num_elevators} elevators"
     )
 
-    # Create simulation
-    simulation = SimulationEngine(num_floors, num_elevators, debug=debug)
+    # Use context manager for automatic cleanup
+    with SimulationEngine(num_floors, num_elevators, debug=debug) as simulation:
+        # Create and start pygame visualization
+        visualization = PygameVisualization(simulation)
 
-    # Create and start pygame visualization
-    visualization = PygameVisualization(simulation)
-
-    try:
-        visualization.start()
-    except KeyboardInterrupt:
-        print("\nShutting down pygame visualization...")
-    except Exception as e:
-        print(f"Error in pygame visualization: {e}")
-    finally:
-        visualization._cleanup()
+        try:
+            visualization.start()
+        except KeyboardInterrupt:
+            print("\nShutting down pygame visualization...")
+        except Exception as e:
+            print(f"Error in pygame visualization: {e}")
+        finally:
+            visualization._cleanup()
 
 
 if __name__ == "__main__":

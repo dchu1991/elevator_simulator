@@ -19,14 +19,16 @@ Options:
 """
 
 import sys
+import time
 import argparse
 
 from src.utils.config_loader import get_config
-from src.core.simulation_engine import SimulationEngine, run_demo_simulation
+from src.core.simulation_engine import SimulationEngine
 from src.visualization.visualization import (
     StatisticsTracker,
     InteractiveController,
     run_statistics_simulation,
+    run_visual_simulation,
 )
 from src.visualization.pygame_visualization import run_pygame_simulation
 
@@ -36,49 +38,44 @@ def run_custom_simulation():
     print("=== Custom Elevator Simulation Setup ===")
 
     try:
-        custom_default()
+        num_floors = int(input("Number of floors (5-50, default 15): ") or "15")
+        num_elevators = int(input("Number of elevators (1-8, default 3): ") or "3")
+        duration = int(input("Duration in minutes (1-30, default 5): ") or "5")
+
+        # Validate inputs
+        num_floors = max(5, min(50, num_floors))
+        num_elevators = max(1, min(8, num_elevators))
+        duration = max(1, min(30, duration))
+
+        print(
+            f"\nStarting simulation: {num_floors} floors, "
+            f"{num_elevators} elevators, {duration} minutes"
+        )
+
+        # Ask for display mode
+        print("\nDisplay modes:")
+        print("1. Visual (ASCII art)")
+        print("2. Statistics only")
+        print("3. Interactive")
+
+        mode = input("Choose mode (1-3, default 1): ") or "1"
+
+        if mode == "1":
+            run_visual_simulation(duration, num_floors, num_elevators)
+        elif mode == "2":
+            run_statistics_simulation(duration, num_floors, num_elevators)
+        elif mode == "3":
+            sim = SimulationEngine(num_floors, num_elevators)
+            controller = InteractiveController(sim)
+            controller.start_interactive_mode()
+        else:
+            print("Invalid mode, using visual mode")
+            run_visual_simulation(duration, num_floors, num_elevators)
     except ValueError:
         print("Invalid input. Using default parameters.")
         run_visual_simulation(5, 15, 3)
     except KeyboardInterrupt:
         print("\nSimulation cancelled.")
-
-
-# TODO Rename this here and in `run_custom_simulation`
-def custom_default():
-    num_floors = int(input("Number of floors (5-50, default 15): ") or "15")
-    num_elevators = int(input("Number of elevators (1-8, default 3): ") or "3")
-    duration = int(input("Duration in minutes (1-30, default 5): ") or "5")
-
-    # Validate inputs
-    num_floors = max(5, min(50, num_floors))
-    num_elevators = max(1, min(8, num_elevators))
-    duration = max(1, min(30, duration))
-
-    print(
-        f"\nStarting simulation: {num_floors} floors, "
-        f"{num_elevators} elevators, {duration} minutes"
-    )
-
-    # Ask for display mode
-    print("\nDisplay modes:")
-    print("1. Visual (ASCII art)")
-    print("2. Statistics only")
-    print("3. Interactive")
-
-    mode = input("Choose mode (1-3, default 1): ") or "1"
-
-    if mode == "1":
-        run_visual_simulation(duration, num_floors, num_elevators)
-    elif mode == "2":
-        run_statistics_simulation(duration, num_floors, num_elevators)
-    elif mode == "3":
-        sim = SimulationEngine(num_floors, num_elevators)
-        controller = InteractiveController(sim)
-        controller.start_interactive_mode()
-    else:
-        print("Invalid mode, using visual mode")
-        run_visual_simulation(duration, num_floors, num_elevators)
 
 
 def run_benchmark():
@@ -97,20 +94,17 @@ def run_benchmark():
     for floors, elevators, description in configurations:
         print(f"\nTesting {description}: {floors} floors, {elevators} elevators")
 
-        sim = SimulationEngine(floors, elevators)
-        stats_tracker = StatisticsTracker(sim)
+        with SimulationEngine(floors, elevators) as sim:
+            stats_tracker = StatisticsTracker(sim)
 
-        sim.start_simulation()
-        stats_tracker.start_tracking(interval=1.0)
+            sim.start_simulation()
+            stats_tracker.start_tracking(interval=1.0)
 
-        try:
-            # Run for 2 minutes
-            import time
-
-            time.sleep(120)
-        finally:
-            stats_tracker.stop_tracking()
-            sim.stop_simulation()
+            try:
+                # Run for 2 minutes
+                time.sleep(120)
+            finally:
+                stats_tracker.stop_tracking()
 
         # Collect results
         final_stats = sim.get_current_statistics()
@@ -141,6 +135,81 @@ def run_benchmark():
             f"{result['elevators']:<10} {result['throughput']:<12.1f} "
             f"{result['avg_wait']:<10.1f} {result['completed']:<10}"
         )
+
+
+def run_simulation_mode(
+    mode_name: str,
+    default_floors: int,
+    default_elevators: int,
+    floors: int,
+    elevators: int,
+    debug: bool,
+    duration_minutes: int = 10,
+):
+    """Helper function to run simulation modes with consistent setup"""
+    actual_floors = floors if floors is not None else default_floors
+    actual_elevators = elevators if elevators is not None else default_elevators
+
+    if debug:
+        print("Debug mode enabled")
+
+    print(
+        f"Running {mode_name} with {actual_floors} floors "
+        f"and {actual_elevators} elevators..."
+    )
+
+    run_pygame_simulation(
+        num_floors=actual_floors,
+        num_elevators=actual_elevators,
+        duration_minutes=duration_minutes,
+        debug=debug,
+    )
+
+
+def run_interactive_mode(
+    default_floors: int,
+    default_elevators: int,
+    floors: int,
+    elevators: int,
+):
+    """Helper function to run interactive mode with consistent setup"""
+    actual_floors = floors if floors is not None else default_floors
+    actual_elevators = elevators if elevators is not None else default_elevators
+
+    print(
+        f"Starting interactive mode with {actual_floors} floors "
+        f"and {actual_elevators} elevators..."
+    )
+
+    sim = SimulationEngine(
+        num_floors=actual_floors,
+        num_elevators=actual_elevators,
+    )
+    controller = InteractiveController(sim)
+    controller.start_interactive_mode()
+
+
+def run_stats_mode(
+    default_floors: int,
+    default_elevators: int,
+    floors: int,
+    elevators: int,
+    duration_minutes: int = 10,
+):
+    """Helper function to run statistics mode with consistent setup"""
+    actual_floors = floors if floors is not None else default_floors
+    actual_elevators = elevators if elevators is not None else default_elevators
+
+    print(
+        f"Running statistics simulation with {actual_floors} floors "
+        f"and {actual_elevators} elevators..."
+    )
+
+    run_statistics_simulation(
+        duration_minutes=duration_minutes,
+        num_floors=actual_floors,
+        num_elevators=actual_elevators,
+    )
 
 
 def show_help():
@@ -282,53 +351,42 @@ Examples:
     # Route to appropriate function
     try:
         if mode == "demo":
-            # Set defaults for demo mode
-            demo_floors = floors if floors is not None else 15
-            demo_elevators = elevators if elevators is not None else 3
-            if debug:
-                print("Debug mode enabled")
-            print(
-                f"Running pygame demonstration with {demo_floors} floors "
-                f"and {demo_elevators} elevators..."
-            )
-            run_pygame_simulation(
-                num_floors=demo_floors,
-                num_elevators=demo_elevators,
-                duration_minutes=2,
+            run_simulation_mode(
+                mode_name="pygame demonstration",
+                default_floors=15,
+                default_elevators=3,
+                floors=floors,
+                elevators=elevators,
                 debug=debug,
+                duration_minutes=2,
             )
 
         elif mode == "pygame":
-            # Set defaults for pygame mode
-            pygame_floors = floors if floors is not None else 15
-            pygame_elevators = elevators if elevators is not None else 3
-            if debug:
-                print("Debug mode enabled")
-            print(
-                f"Starting pygame visualization with {pygame_floors} floors "
-                f"and {pygame_elevators} elevators..."
-            )
-            run_pygame_simulation(
-                num_floors=pygame_floors,
-                num_elevators=pygame_elevators,
-                duration_minutes=10,
+            run_simulation_mode(
+                mode_name="pygame visualization",
+                default_floors=15,
+                default_elevators=3,
+                floors=floors,
+                elevators=elevators,
                 debug=debug,
+                duration_minutes=10,
             )
 
         elif mode == "interactive":
-            _default_interactive_mode(floors, elevators)
-        elif mode == "stats":
-            # Set defaults for stats mode
-            stats_floors = floors if floors is not None else 20
-            stats_elevators = elevators if elevators is not None else 4
-            print(
-                f"Running statistics simulation with {stats_floors} floors "
-                f"and {stats_elevators} elevators..."
+            run_interactive_mode(
+                default_floors=15,
+                default_elevators=4,
+                floors=floors,
+                elevators=elevators,
             )
-            run_statistics_simulation(
+
+        elif mode == "stats":
+            run_stats_mode(
+                default_floors=20,
+                default_elevators=4,
+                floors=floors,
+                elevators=elevators,
                 duration_minutes=10,
-                num_floors=stats_floors,
-                num_elevators=stats_elevators,
             )
 
         elif mode == "custom":
@@ -349,22 +407,6 @@ Examples:
     except Exception as e:
         print(f"\nError running simulation: {e}")
         print("Use 'uv run main.py help' for usage information.")
-
-
-def _default_interactive_mode(floors, elevators):
-    # Set defaults for interactive mode
-    interactive_floors = floors if floors is not None else 15
-    interactive_elevators = elevators if elevators is not None else 4
-    print(
-        f"Starting interactive mode with {interactive_floors} floors "
-        f"and {interactive_elevators} elevators..."
-    )
-    sim = SimulationEngine(
-        num_floors=interactive_floors,
-        num_elevators=interactive_elevators,
-    )
-    controller = InteractiveController(sim)
-    controller.start_interactive_mode()
 
 
 if __name__ == "__main__":

@@ -190,20 +190,24 @@ uv run main.py help
 from simulation_engine import SimulationEngine
 from visualization import InteractiveController
 
-# Create simulation
+# Using context manager (recommended for automatic cleanup)
+with SimulationEngine(num_floors=20, num_elevators=4) as sim:
+    # Start simulation
+    sim.start_simulation()
+
+    # Add manual requests
+    sim.add_manual_request(from_floor=1, to_floor=15)
+
+    # Get statistics
+    stats = sim.get_current_statistics()
+    print(f"Throughput: {stats['throughput']:.1f} people/hour")
+    
+    # Simulation automatically stopped when exiting context
+
+# Or use manual start/stop
 sim = SimulationEngine(num_floors=20, num_elevators=4)
-
-# Start simulation
 sim.start_simulation()
-
-# Add manual requests
-sim.add_manual_request(from_floor=1, to_floor=15)
-
-# Get statistics
-stats = sim.get_current_statistics()
-print(f"Throughput: {stats['throughput']:.1f} people/hour")
-
-# Stop simulation
+# ... do work ...
 sim.stop_simulation()
 ```
 
