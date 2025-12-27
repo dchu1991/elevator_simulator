@@ -20,3 +20,6 @@ htmlcov/
 .mypy_cache/
 .pytype/
 .ruff_cache/
+
+# Local setup instructions
+SETUP_REMOTE.md

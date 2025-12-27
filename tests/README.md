@@ -3,37 +3,45 @@
 ## Running Tests
 
 ### Run all tests
+
 ```bash
 uv run pytest
 ```
 
 ### Run with coverage report
+
 ```bash
 uv run pytest --cov=src --cov-report=html
 ```
+
 Then open `htmlcov/index.html` in your browser.
 
 ### Run only unit tests
+
 ```bash
 uv run pytest -m unit
 ```
 
 ### Run only integration tests
+
 ```bash
 uv run pytest -m integration
 ```
 
 ### Run tests excluding slow ones
+
 ```bash
 uv run pytest -m "not slow"
 ```
 
 ### Run specific test file
+
 ```bash
 uv run pytest tests/test_movement.py -v
 ```
 
 ### Run specific test function
+
 ```bash
 uv run pytest tests/test_movement.py::test_elevator_capacity -v
 ```
@@ -74,12 +82,14 @@ Common fixtures available in all tests (defined in `conftest.py`):
 Current test coverage: **41%**
 
 To improve coverage, focus on:
+
 - Visualization modules (currently 0%)
 - Demo loader utilities (currently 0%)
 - Edge cases in simulation engine
 - Error handling paths
 
 View detailed coverage report:
+
 ```bash
 uv run pytest --cov=src --cov-report=html
 open htmlcov/index.html

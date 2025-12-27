@@ -289,7 +289,7 @@ class PygameVisualization:
         floor_height = building_rect.height / num_floors
 
         for floor_num in range(num_floors):
-            y = building_rect.bottom - (floor_num + 1) * floor_height
+            y = building_rect.bottom - floor_num * floor_height
             floor_rect = pygame.Rect(building_rect.x, y, building_rect.width, 2)
             pygame.draw.rect(self.screen, Colors.FLOOR, floor_rect)
 
@@ -304,9 +304,17 @@ class PygameVisualization:
         self, floor_number: int, y_position: float, floor_height: float
     ):
         """Render people waiting on a floor"""
-        waiting_up = self.simulation.building.waiting_up[floor_number]
-        waiting_down = self.simulation.building.waiting_down[floor_number]
+        # Get waiting people - use .get() to avoid KeyError
+        waiting_up = self.simulation.building.waiting_up.get(floor_number, [])
+        waiting_down = self.simulation.building.waiting_down.get(floor_number, [])
         all_waiting = waiting_up + waiting_down
+
+        # Filter out people who are already in elevators (safety check for race conditions)
+        people_in_elevators = set()
+        for elevator in self.simulation.building.elevators:
+            people_in_elevators.update(id(p) for p in elevator.passengers)
+
+        all_waiting = [p for p in all_waiting if id(p) not in people_in_elevators]
 
         if not all_waiting:
             return
@@ -569,7 +577,10 @@ class PygameVisualization:
 
 
 def run_pygame_simulation(
-    num_floors: int = 15, num_elevators: int = 3, duration_minutes: int = 10
+    num_floors: int = 15,
+    num_elevators: int = 3,
+    duration_minutes: int = 10,
+    debug: bool = False,
 ):
     """Run the pygame visualization"""
     print(
@@ -577,7 +588,7 @@ def run_pygame_simulation(
     )
 
     # Create simulation
-    simulation = SimulationEngine(num_floors, num_elevators)
+    simulation = SimulationEngine(num_floors, num_elevators, debug=debug)
 
     # Create and start pygame visualization
     visualization = PygameVisualization(simulation)

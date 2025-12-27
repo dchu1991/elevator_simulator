@@ -370,6 +370,7 @@ elevator/
   - `ruff>=0.14.9` - Linting
 
 Install all dependencies:
+
 ```bash
 uv sync
 ```

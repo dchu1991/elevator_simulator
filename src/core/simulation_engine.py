@@ -42,11 +42,12 @@ class SimulationEvent:
 class ElevatorController:
     """Advanced controller for managing individual elevator operations"""
 
-    def __init__(self, elevator: Elevator, building: Building):
+    def __init__(self, elevator: Elevator, building: Building, debug: bool = False):
         self.elevator = elevator
         self.building = building
         self.is_running = False
         self.thread: Optional[threading.Thread] = None
+        self.debug = debug
 
         # Event queue for this elevator
         self.event_queue: PriorityQueue = PriorityQueue()
@@ -91,7 +92,22 @@ class ElevatorController:
         self.last_activity_time = current_time
 
         # Update direction based on requests first
+        old_direction = self.elevator.direction
         self.elevator.update_direction()
+
+        if self.debug and old_direction != self.elevator.direction:
+            if (
+                self.elevator.up_requests
+                or self.elevator.down_requests
+                or self.elevator.destination_floors
+            ):
+                print(
+                    f"E{self.elevator.id} Floor={self.elevator.current_floor}: "
+                    f"{old_direction.value} -> {self.elevator.direction.value} "
+                    f"(Dest={sorted(self.elevator.destination_floors)}, "
+                    f"Up={sorted(self.elevator.up_requests)}, "
+                    f"Down={sorted(self.elevator.down_requests)})"
+                )
 
         # Check if we need to stop at current floor
         if self._should_stop_at_current_floor():
@@ -115,20 +131,54 @@ class ElevatorController:
         if current_floor in self.elevator.destination_floors:
             return True
 
-        # Stop if there are people waiting in our direction and we have space
-        # Also stop if we're idle and there are people waiting
-        if (
-            current_floor in self.elevator.up_requests
-            and self.elevator.direction in [Direction.UP, Direction.IDLE]
-            and not self.elevator.is_full
-        ):
-            return True
-
-        return (
-            current_floor in self.elevator.down_requests
-            and self.elevator.direction in [Direction.DOWN, Direction.IDLE]
-            and not self.elevator.is_full
+        # Check if there are people actually waiting, not just requests
+        has_people_waiting_up = (
+            len(self.building.get_waiting_people(current_floor, Direction.UP)) > 0
         )
+        has_people_waiting_down = (
+            len(self.building.get_waiting_people(current_floor, Direction.DOWN)) > 0
+        )
+
+        # Clean up stale requests - requests for current floor where nobody is waiting
+        if current_floor in self.elevator.up_requests and not has_people_waiting_up:
+            if self.debug:
+                print(
+                    f"E{self.elevator.id} Removing stale UP request at floor {current_floor}"
+                )
+            self.elevator.up_requests.discard(current_floor)
+        if current_floor in self.elevator.down_requests and not has_people_waiting_down:
+            if self.debug:
+                print(
+                    f"E{self.elevator.id} Removing stale DOWN request at floor {current_floor}"
+                )
+            self.elevator.down_requests.discard(current_floor)
+
+        # Stop if there are people waiting in our direction and we have space
+        if not self.elevator.is_full:
+            if self.elevator.direction == Direction.UP and has_people_waiting_up:
+                return True
+            if self.elevator.direction == Direction.DOWN and has_people_waiting_down:
+                return True
+            if self.elevator.direction == Direction.IDLE and (
+                has_people_waiting_up or has_people_waiting_down
+            ):
+                return True
+
+            # If no more requests in current direction but people waiting opposite direction, stop
+            if self.elevator.direction == Direction.UP:
+                has_more_up_requests = self.elevator.has_requests_in_direction(
+                    Direction.UP, current_floor
+                )
+                if not has_more_up_requests and has_people_waiting_down:
+                    return True
+            elif self.elevator.direction == Direction.DOWN:
+                has_more_down_requests = self.elevator.has_requests_in_direction(
+                    Direction.DOWN, current_floor
+                )
+                if not has_more_down_requests and has_people_waiting_up:
+                    return True
+
+        return False
 
     def _handle_floor_stop(self):
         """Handle stopping at current floor"""
@@ -161,6 +211,30 @@ class ElevatorController:
             current_floor, waiting_people
         )
 
+        if self.debug and (passengers_leaving or passengers_boarding):
+            print(
+                f"E{self.elevator.id} STOP Floor={current_floor} Dir={self.elevator.direction.value}: "
+                f"Boarded={len(passengers_boarding)}, Left={len(passengers_leaving)}, "
+                f"Onboard={self.elevator.passenger_count}/{self.elevator.capacity}"
+            )
+            # Verify we're actually at the floor
+            if self.elevator.current_floor != current_floor:
+                print(
+                    f"  WARNING: Elevator actual floor={self.elevator.current_floor}, "
+                    f"but stopping at floor={current_floor}"
+                )
+
+        # Update building's waiting lists for boarded passengers
+        for person in passengers_boarding:
+            if person.direction == Direction.UP:
+                self.building.remove_waiting_people(
+                    current_floor, Direction.UP, [person]
+                )
+            else:
+                self.building.remove_waiting_people(
+                    current_floor, Direction.DOWN, [person]
+                )
+
         # Check if there are still people waiting after boarding
         # Only remove requests if the waiting area is now empty
         still_waiting_up = len(
@@ -175,17 +249,6 @@ class ElevatorController:
             self.elevator.up_requests.discard(current_floor)
         if current_floor in self.elevator.down_requests and still_waiting_down == 0:
             self.elevator.down_requests.discard(current_floor)
-
-        # Update building's waiting lists for boarded passengers
-        for person in passengers_boarding:
-            if person.direction == Direction.UP:
-                self.building.remove_waiting_people(
-                    current_floor, Direction.UP, [person]
-                )
-            else:
-                self.building.remove_waiting_people(
-                    current_floor, Direction.DOWN, [person]
-                )
 
         # Update statistics
         for person in passengers_leaving:
@@ -309,14 +372,17 @@ class TrafficManager:
 class SimulationEngine:
     """Main simulation engine that coordinates all components"""
 
-    def __init__(self, num_floors: int = 20, num_elevators: int = 4):
+    def __init__(
+        self, num_floors: int = 20, num_elevators: int = 4, debug: bool = False
+    ):
         self.building = Building(num_floors, num_elevators)
         self.traffic_manager = TrafficManager(self.building)
         self.elevator_controllers: List[ElevatorController] = []
+        self.debug = debug
 
         # Create controllers for each elevator
         for elevator in self.building.elevators:
-            controller = ElevatorController(elevator, self.building)
+            controller = ElevatorController(elevator, self.building, debug=debug)
             self.elevator_controllers.append(controller)
 
         # Simulation state

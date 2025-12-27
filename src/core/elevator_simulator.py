@@ -239,9 +239,8 @@ class Elevator:
         remaining_people = []
 
         for person in waiting_people:
-            # Board passenger if we have space and either:
-            # 1. We're moving in their direction, or
-            # 2. We're idle (will adopt their direction)
+            # Board passenger if we have space and moving in their direction
+            # Or if we're idle (we'll adopt their direction)
             can_board = not self.is_full and (
                 person.direction == self.direction or self.direction == Direction.IDLE
             )

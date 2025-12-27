@@ -51,12 +51,8 @@ def small_simulation():
 def sample_person():
     """Create a sample person for testing"""
     import time
-    return Person(
-        id=1,
-        current_floor=1,
-        destination_floor=5,
-        arrival_time=time.time()
-    )
+
+    return Person(id=1, current_floor=1, destination_floor=5, arrival_time=time.time())
 
 
 @pytest.fixture

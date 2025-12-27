@@ -6,12 +6,16 @@ A comprehensive elevator simulation for a multi-story mall with realistic
 traffic patterns, intelligent scheduling, and real-time visualization.
 
 Usage:
-    uv run main.py demo        - Run a quick 2-minute demonstration
-    uv run main.py visual      - Run with ASCII visualization (5 minutes)
-    uv run main.py pygame      - Run with pygame graphical visualization
-    uv run main.py interactive - Start interactive mode with live controls
-    uv run main.py stats       - Run statistics-focused simulation (10 minutes)
-    uv run main.py custom      - Configure custom simulation parameters
+    uv run main.py demo                    - Run a quick 2-minute demonstration
+    uv run main.py pygame                  - Run with pygame graphical visualization
+    uv run main.py interactive             - Start interactive mode with live controls
+    uv run main.py stats                   - Run statistics-focused simulation (10 minutes)
+    uv run main.py custom                  - Configure custom simulation parameters
+
+Options:
+    --floors, -f    Number of floors (5-50)
+    --elevators, -e Number of elevators (1-8)
+    --debug, -d     Enable debug mode with detailed logging
 """
 
 import sys
@@ -22,7 +26,6 @@ from src.core.simulation_engine import SimulationEngine, run_demo_simulation
 from src.visualization.visualization import (
     StatisticsTracker,
     InteractiveController,
-    run_visual_simulation,
     run_statistics_simulation,
 )
 from src.visualization.pygame_visualization import run_pygame_simulation
@@ -199,12 +202,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  uv run main.py demo                      # Quick demonstration
-  uv run main.py demo --floors 20         # Demo with 20 floors
-  uv run main.py visual --elevators 6     # Visual mode with 6 elevators
-  uv run main.py pygame --floors 20       # Pygame graphical visualization
+  uv run main.py demo                          # Quick demonstration
+  uv run main.py demo --floors 20              # Demo with 20 floors
+  uv run main.py visual --elevators 6          # Visual mode with 6 elevators
+  uv run main.py pygame --floors 20 --debug    # Pygame with debug logging
   uv run main.py interactive --floors 15 --elevators 4  # Custom interactive
-  uv run main.py stats -f 25 -e 5        # Stats mode with short flags
+  uv run main.py stats -f 25 -e 5 -d          # Stats mode with debug enabled
         """,
     )
 
@@ -214,7 +217,6 @@ Examples:
         default="demo",
         choices=[
             "demo",
-            "visual",
             "pygame",
             "interactive",
             "stats",
@@ -241,11 +243,18 @@ Examples:
         help="Number of elevators (1-8, default varies by mode)",
     )
 
+    parser.add_argument(
+        "--debug",
+        "-d",
+        action="store_true",
+        help="Enable debug mode with detailed logging",
+    )
+
     # If no arguments, show help for interactive usage
     if len(sys.argv) == 1:
         print(__doc__)
         print(
-            "\nAvailable modes: demo, visual, interactive, stats, "
+            "\nAvailable modes: demo, pygame, interactive, stats, "
             "custom, benchmark, help"
         )
         mode = (
@@ -254,11 +263,13 @@ Examples:
         # Set defaults for interactive mode
         floors = None
         elevators = None
+        debug = False
     else:
         args = parser.parse_args()
         mode = args.mode
         floors = args.floors
         elevators = args.elevators
+        debug = args.debug
 
         # Validate ranges
         if floors is not None and not (5 <= floors <= 50):
@@ -274,34 +285,25 @@ Examples:
             # Set defaults for demo mode
             demo_floors = floors if floors is not None else 15
             demo_elevators = elevators if elevators is not None else 3
+            if debug:
+                print("Debug mode enabled")
             print(
-                f"Running quick demonstration with {demo_floors} floors "
+                f"Running pygame demonstration with {demo_floors} floors "
                 f"and {demo_elevators} elevators..."
             )
-            run_demo_simulation(
-                duration_minutes=2,
+            run_pygame_simulation(
                 num_floors=demo_floors,
                 num_elevators=demo_elevators,
-            )
-
-        elif mode == "visual":
-            # Set defaults for visual mode
-            visual_floors = floors if floors is not None else 15
-            visual_elevators = elevators if elevators is not None else 3
-            print(
-                f"Starting visual simulation with {visual_floors} floors "
-                f"and {visual_elevators} elevators..."
-            )
-            run_visual_simulation(
-                duration_minutes=5,
-                num_floors=visual_floors,
-                num_elevators=visual_elevators,
+                duration_minutes=2,
+                debug=debug,
             )
 
         elif mode == "pygame":
             # Set defaults for pygame mode
             pygame_floors = floors if floors is not None else 15
             pygame_elevators = elevators if elevators is not None else 3
+            if debug:
+                print("Debug mode enabled")
             print(
                 f"Starting pygame visualization with {pygame_floors} floors "
                 f"and {pygame_elevators} elevators..."
@@ -310,6 +312,7 @@ Examples:
                 num_floors=pygame_floors,
                 num_elevators=pygame_elevators,
                 duration_minutes=10,
+                debug=debug,
             )
 
         elif mode == "interactive":
