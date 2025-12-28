@@ -42,12 +42,19 @@ class SimulationEvent:
 class ElevatorController:
     """Advanced controller for managing individual elevator operations"""
 
-    def __init__(self, elevator: Elevator, building: Building, debug: bool = False):
+    def __init__(
+        self,
+        elevator: Elevator,
+        building: Building,
+        debug: bool = False,
+        time_scale: float = 1.0,
+    ):
         self.elevator = elevator
         self.building = building
         self.is_running = False
         self.thread: Optional[threading.Thread] = None
         self.debug = debug
+        self.time_scale = time_scale
 
         # Event queue for this elevator
         self.event_queue: PriorityQueue = PriorityQueue()
@@ -76,7 +83,7 @@ class ElevatorController:
         while self.is_running:
             try:
                 self._process_elevator_step()
-                time.sleep(config.control_loop_interval)
+                time.sleep(config.control_loop_interval * self.time_scale)
             except Exception as e:
                 print(f"Error in elevator {self.elevator.id} control loop: {e}")
 
@@ -257,7 +264,7 @@ class ElevatorController:
 
         # Simulate loading/unloading time
         loading_time = 0.5 + (len(passengers_leaving) + len(passengers_boarding)) * 0.2
-        time.sleep(loading_time)
+        time.sleep(loading_time * self.time_scale)
 
         self.elevator.state = ElevatorState.MOVING
 
@@ -295,7 +302,7 @@ class ElevatorController:
 
         # Small delay to simulate movement (configurable)
         config = get_config()
-        time.sleep(config.movement_delay_factor / self.elevator.speed)
+        time.sleep(config.movement_delay_factor / self.elevator.speed * self.time_scale)
 
 
 class TrafficManager:
@@ -373,16 +380,23 @@ class SimulationEngine:
     """Main simulation engine that coordinates all components"""
 
     def __init__(
-        self, num_floors: int = 20, num_elevators: int = 4, debug: bool = False
+        self,
+        num_floors: int = 20,
+        num_elevators: int = 4,
+        debug: bool = False,
+        time_scale: float = 1.0,
     ):
         self.building = Building(num_floors, num_elevators)
         self.traffic_manager = TrafficManager(self.building)
         self.elevator_controllers: List[ElevatorController] = []
         self.debug = debug
+        self.time_scale = time_scale  # 1.0 = normal speed, 0.1 = 10x faster
 
         # Create controllers for each elevator
         for elevator in self.building.elevators:
-            controller = ElevatorController(elevator, self.building, debug=debug)
+            controller = ElevatorController(
+                elevator, self.building, debug=debug, time_scale=time_scale
+            )
             self.elevator_controllers.append(controller)
 
         # Simulation state

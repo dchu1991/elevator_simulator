@@ -94,7 +94,7 @@ def run_benchmark():
     for floors, elevators, description in configurations:
         print(f"\nTesting {description}: {floors} floors, {elevators} elevators")
 
-        with SimulationEngine(floors, elevators) as sim:
+        with SimulationEngine(floors, elevators, time_scale=0.2) as sim:
             stats_tracker = StatisticsTracker(sim)
 
             sim.start_simulation()

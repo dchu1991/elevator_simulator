@@ -626,7 +626,9 @@ def run_visual_simulation(
     duration_minutes: int = 10, num_floors: int = 15, num_elevators: int = 3
 ):
     """Run simulation with ASCII visualization"""
-    sim = SimulationEngine(num_floors=num_floors, num_elevators=num_elevators)
+    sim = SimulationEngine(
+        num_floors=num_floors, num_elevators=num_elevators, time_scale=0.5
+    )
     display = ASCIIDisplay(sim)
 
     sim.start_simulation()
@@ -643,7 +645,9 @@ def run_statistics_simulation(
     duration_minutes: int = 10, num_floors: int = 20, num_elevators: int = 4
 ):
     """Run simulation focused on statistics collection"""
-    sim = SimulationEngine(num_floors=num_floors, num_elevators=num_elevators)
+    sim = SimulationEngine(
+        num_floors=num_floors, num_elevators=num_elevators, time_scale=0.2
+    )
     stats = StatisticsTracker(sim)
 
     sim.start_simulation()
