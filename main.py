@@ -10,7 +10,6 @@ Usage:
     uv run main.py pygame                  - Run with pygame graphical visualization
     uv run main.py interactive             - Start interactive mode with live controls
     uv run main.py stats                   - Run statistics-focused simulation (10 minutes)
-    uv run main.py custom                  - Configure custom simulation parameters
 
 Options:
     --floors, -f    Number of floors (5-50)
@@ -28,54 +27,8 @@ from src.visualization.visualization import (
     StatisticsTracker,
     InteractiveController,
     run_statistics_simulation,
-    run_visual_simulation,
 )
 from src.visualization.pygame_visualization import run_pygame_simulation
-
-
-def run_custom_simulation():
-    """Run simulation with user-specified parameters"""
-    print("=== Custom Elevator Simulation Setup ===")
-
-    try:
-        num_floors = int(input("Number of floors (5-50, default 15): ") or "15")
-        num_elevators = int(input("Number of elevators (1-8, default 3): ") or "3")
-        duration = int(input("Duration in minutes (1-30, default 5): ") or "5")
-
-        # Validate inputs
-        num_floors = max(5, min(50, num_floors))
-        num_elevators = max(1, min(8, num_elevators))
-        duration = max(1, min(30, duration))
-
-        print(
-            f"\nStarting simulation: {num_floors} floors, "
-            f"{num_elevators} elevators, {duration} minutes"
-        )
-
-        # Ask for display mode
-        print("\nDisplay modes:")
-        print("1. Visual (ASCII art)")
-        print("2. Statistics only")
-        print("3. Interactive")
-
-        mode = input("Choose mode (1-3, default 1): ") or "1"
-
-        if mode == "1":
-            run_visual_simulation(duration, num_floors, num_elevators)
-        elif mode == "2":
-            run_statistics_simulation(duration, num_floors, num_elevators)
-        elif mode == "3":
-            sim = SimulationEngine(num_floors, num_elevators)
-            controller = InteractiveController(sim)
-            controller.start_interactive_mode()
-        else:
-            print("Invalid mode, using visual mode")
-            run_visual_simulation(duration, num_floors, num_elevators)
-    except ValueError:
-        print("Invalid input. Using default parameters.")
-        run_visual_simulation(5, 15, 3)
-    except KeyboardInterrupt:
-        print("\nSimulation cancelled.")
 
 
 def run_benchmark():
@@ -94,7 +47,7 @@ def run_benchmark():
     for floors, elevators, description in configurations:
         print(f"\nTesting {description}: {floors} floors, {elevators} elevators")
 
-        with SimulationEngine(floors, elevators, time_scale=0.1) as sim:
+        with SimulationEngine(floors, elevators, time_scale=0.5) as sim:
             stats_tracker = StatisticsTracker(sim)
 
             sim.start_simulation()
@@ -139,76 +92,59 @@ def run_benchmark():
 
 def run_simulation_mode(
     mode_name: str,
-    default_floors: int,
-    default_elevators: int,
-    floors: int,
-    elevators: int,
-    debug: bool,
+    floors: int = 15,
+    elevators: int = 3,
+    debug: bool = False,
     duration_minutes: int = 10,
 ):
-    """Helper function to run simulation modes with consistent setup"""
-    actual_floors = floors if floors is not None else default_floors
-    actual_elevators = elevators if elevators is not None else default_elevators
 
     if debug:
         print("Debug mode enabled")
 
-    print(
-        f"Running {mode_name} with {actual_floors} floors "
-        f"and {actual_elevators} elevators..."
-    )
+    print(f"Running {mode_name} with {floors} floors and {elevators} elevators...")
 
     run_pygame_simulation(
-        num_floors=actual_floors,
-        num_elevators=actual_elevators,
+        num_floors=floors,
+        num_elevators=elevators,
         duration_minutes=duration_minutes,
         debug=debug,
     )
 
 
 def run_interactive_mode(
-    default_floors: int,
-    default_elevators: int,
-    floors: int,
-    elevators: int,
+    floors: int = 15,
+    elevators: int = 4,
 ):
-    """Helper function to run interactive mode with consistent setup"""
-    actual_floors = floors if floors is not None else default_floors
-    actual_elevators = elevators if elevators is not None else default_elevators
 
     print(
-        f"Starting interactive mode with {actual_floors} floors "
-        f"and {actual_elevators} elevators..."
+        f"Starting interactive mode with {floors} floors "
+        f"and {elevators} elevators..."
     )
 
     sim = SimulationEngine(
-        num_floors=actual_floors,
-        num_elevators=actual_elevators,
+        num_floors=floors,
+        num_elevators=elevators,
+        time_scale=0.2,
     )
     controller = InteractiveController(sim)
     controller.start_interactive_mode()
 
 
 def run_stats_mode(
-    default_floors: int,
-    default_elevators: int,
-    floors: int,
-    elevators: int,
+    floors: int = 20,
+    elevators: int = 4,
     duration_minutes: int = 10,
 ):
-    """Helper function to run statistics mode with consistent setup"""
-    actual_floors = floors if floors is not None else default_floors
-    actual_elevators = elevators if elevators is not None else default_elevators
 
     print(
-        f"Running statistics simulation with {actual_floors} floors "
-        f"and {actual_elevators} elevators..."
+        f"Running statistics simulation with {floors} floors "
+        f"and {elevators} elevators..."
     )
 
     run_statistics_simulation(
         duration_minutes=duration_minutes,
-        num_floors=actual_floors,
-        num_elevators=actual_elevators,
+        num_floors=floors,
+        num_elevators=elevators,
     )
 
 
@@ -228,14 +164,14 @@ Current Configuration:
   Building: {config.num_floors} floors, {config.num_elevators} elevators
   Capacity: {config.elevator_capacity} passengers per elevator
   Speed: {config.elevator_speed} floors/second
-  
+
   Strategy:
     Distance weight: {config.distance_weight}
     Same direction bonus: {config.same_direction_bonus}
     Opposite direction penalty: {config.opposite_direction_penalty}
     Full elevator penalty: {config.full_penalty}
     Load balancing: {'enabled' if config.enable_load_balancing else 'disabled'}
-  
+
   Traffic:
     Base arrival rate: {config.base_arrival_rate} people/minute
     Rush hour multiplier: {config.rush_multiplier}x
@@ -250,7 +186,6 @@ Available Commands:
   pygame      - Modern graphical visualization (requires pygame)
   interactive - Interactive mode with live controls
   stats       - Statistics-focused run (10 minutes)
-  custom      - Configure your own simulation
   benchmark   - Performance comparison across configurations
   help        - Show this help message
 
@@ -289,7 +224,6 @@ Examples:
             "pygame",
             "interactive",
             "stats",
-            "custom",
             "benchmark",
             "help",
         ],
@@ -322,16 +256,13 @@ Examples:
     # If no arguments, show help for interactive usage
     if len(sys.argv) == 1:
         print(__doc__)
-        print(
-            "\nAvailable modes: demo, pygame, interactive, stats, "
-            "custom, benchmark, help"
-        )
+        print("\nAvailable modes: demo, pygame, interactive, stats, " "benchmark, help")
         mode = (
             input("Choose a mode (or press Enter for demo): ").strip().lower()
         ) or "demo"
         # Set defaults for interactive mode
-        floors = None
-        elevators = None
+        floors = 20
+        elevators = 4
         debug = False
     else:
         args = parser.parse_args()
@@ -353,8 +284,6 @@ Examples:
         if mode == "demo":
             run_simulation_mode(
                 mode_name="pygame demonstration",
-                default_floors=15,
-                default_elevators=3,
                 floors=floors,
                 elevators=elevators,
                 debug=debug,
@@ -364,8 +293,6 @@ Examples:
         elif mode == "pygame":
             run_simulation_mode(
                 mode_name="pygame visualization",
-                default_floors=15,
-                default_elevators=3,
                 floors=floors,
                 elevators=elevators,
                 debug=debug,
@@ -374,23 +301,16 @@ Examples:
 
         elif mode == "interactive":
             run_interactive_mode(
-                default_floors=15,
-                default_elevators=4,
                 floors=floors,
                 elevators=elevators,
             )
 
         elif mode == "stats":
             run_stats_mode(
-                default_floors=20,
-                default_elevators=4,
                 floors=floors,
                 elevators=elevators,
                 duration_minutes=10,
             )
-
-        elif mode == "custom":
-            run_custom_simulation()
 
         elif mode == "benchmark":
             run_benchmark()

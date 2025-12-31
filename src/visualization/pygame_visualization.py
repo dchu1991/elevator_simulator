@@ -588,7 +588,9 @@ def run_pygame_simulation(
     )
 
     # Use context manager for automatic cleanup
-    with SimulationEngine(num_floors, num_elevators, debug=debug) as simulation:
+    with SimulationEngine(
+        num_floors, num_elevators, time_scale=0.2, debug=debug
+    ) as simulation:
         # Create and start pygame visualization
         visualization = PygameVisualization(simulation)
 
