@@ -28,6 +28,7 @@ def run_scenario(scenario: DemoScenario):
     print()
 
     # Create simulation with context manager
+    print(f"Using strategy: {scenario.strategy_name}")
     with SimulationEngine(
         num_floors=scenario.num_floors,
         num_elevators=scenario.num_elevators,
@@ -112,7 +113,8 @@ def run_scenario(scenario: DemoScenario):
             final_stats = sim.get_current_statistics()
             print("\nFinal Results:")
             print(f"  Total Completed: {final_stats['total_people_completed']}")
-            print(f"  Average Wait Time: {final_stats['avg_wait_time']:.1f} seconds")
+            print(f"  Average Wait Time: {final_stats['avg_journey_time']:.1f} seconds")
+            print(f"  Currently Waiting: {final_stats['people_waiting']}")
             print(f"  System Throughput: {final_stats['throughput']:.1f} people/hour")
 
     print()
@@ -135,7 +137,7 @@ def _track_progress_monitor(scenario, sim):
 
             for stat_name in scenario.monitoring_stats:
                 if stat_name == "avg_wait_time":
-                    status_parts.append(f"{stats['avg_wait_time']:.1f}s avg wait")
+                    status_parts.append(f"{stats['avg_journey_time']:.1f}s avg wait")
                 elif stat_name == "completed":
                     status_parts.append(f"{stats['total_people_completed']} completed")
                 elif stat_name == "generated":
@@ -181,12 +183,20 @@ def load_and_run_demos():
     print("=" * 60)
     print("✅ ALL DEMOS COMPLETED SUCCESSFULLY!")
     print("=" * 60)
-    print(
-        "To run the simulator interactively:",
-        "  uv run main.py interactive",
-    )
-    print("To run with visual display:", "  uv run main.py visual")
-    print("To customize settings:", "  uv run main.py custom")
+    print("\nDemo Scenarios:")
+    print("  uv run demos/demo.py         # Run predefined demo scenarios")
+    print("  Edit config/demo_scenarios.json to customize scenarios")
+    print("\nMain Simulator Modes:")
+    print("  uv run main.py demo          # Quick pygame demo (2 min)")
+    print("  uv run main.py pygame        # Pygame visualization")
+    print("  uv run main.py interactive   # Interactive mode")
+    print("  uv run main.py stats         # Statistics tracking (10 min)")
+    print("  uv run main.py benchmark     # Performance benchmarks")
+    print("\nConfiguration:")
+    print("  Edit config/elevator_config.json for:")
+    print("    - strategy_type: default, look, destination_dispatch, ml, adaptive")
+    print("    - traffic patterns (base_arrival_rate, rush_multiplier)")
+    print("    - building parameters (floors, elevators, capacity)")
 
 
 if __name__ == "__main__":

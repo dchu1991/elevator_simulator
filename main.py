@@ -31,7 +31,7 @@ from src.visualization.visualization import (
 from src.visualization.pygame_visualization import run_pygame_simulation
 
 
-def run_benchmark():
+def run_benchmark(debug: bool = False):
     """Run performance benchmarks with different configurations"""
     print("=== Elevator System Benchmarks ===")
 
@@ -47,10 +47,18 @@ def run_benchmark():
     for floors, elevators, description in configurations:
         print(f"\nTesting {description}: {floors} floors, {elevators} elevators")
 
-        with SimulationEngine(floors, elevators, time_scale=0.5) as sim:
+        with SimulationEngine(floors, elevators, debug=debug, time_scale=0.2) as sim:
             stats_tracker = StatisticsTracker(sim)
 
             sim.start_simulation()
+
+            # Pre-populate with initial passengers to avoid cold start
+            print("  Seeding with initial passengers...")
+            for _ in range(floors * 3):  # 3 passengers per floor
+                person = sim.traffic_manager.person_generator.generate_person()
+                sim.building.add_person_request(person)
+                sim.building.total_people_generated += 1
+
             stats_tracker.start_tracking(interval=1.0)
 
             try:
@@ -59,18 +67,18 @@ def run_benchmark():
             finally:
                 stats_tracker.stop_tracking()
 
-        # Collect results
-        final_stats = sim.get_current_statistics()
-        results.append(
-            {
-                "config": description,
-                "floors": floors,
-                "elevators": elevators,
-                "throughput": final_stats["throughput"],
-                "avg_wait": final_stats["avg_wait_time"],
-                "completed": final_stats["total_people_completed"],
-            }
-        )
+            # Collect results BEFORE exiting context
+            final_stats = sim.get_current_statistics()
+            results.append(
+                {
+                    "config": description,
+                    "floors": floors,
+                    "elevators": elevators,
+                    "throughput": final_stats["throughput"],
+                    "avg_wait": final_stats["avg_wait_time"],
+                    "completed": final_stats["total_people_completed"],
+                }
+            )
 
     # Display benchmark results
     print("\n" + "=" * 80)
@@ -313,7 +321,7 @@ Examples:
             )
 
         elif mode == "benchmark":
-            run_benchmark()
+            run_benchmark(debug=debug)
 
         elif mode == "help":
             show_help()

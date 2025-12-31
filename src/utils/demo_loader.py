@@ -28,6 +28,7 @@ class DemoScenario:
     description: str
     num_floors: int
     num_elevators: int
+    strategy_name: str
     duration_seconds: int
     manual_requests: List[ManualRequest]
     request_delay: float
@@ -58,10 +59,10 @@ class DemoScenario:
             description=data.get("description", ""),
             num_floors=building.get("num_floors", 15),
             num_elevators=building.get("num_elevators", 3),
+            strategy_name=data.get("strategy", "default"),
             duration_seconds=data.get("duration_seconds", 120),
             manual_requests=[
-                ManualRequest(req["from_floor"], req["to_floor"])
-                for req in manual_reqs
+                ManualRequest(req["from_floor"], req["to_floor"]) for req in manual_reqs
             ],
             request_delay=data.get("request_delay", 0.0),
             traffic_enabled=traffic.get("enabled", False),
@@ -73,9 +74,7 @@ class DemoScenario:
             visualization_type=visualization.get("type", "none"),
             visualization_interval=visualization.get("update_interval", 1.0),
             visualization_frames=visualization.get("frames", 0),
-            show_elevator_performance=data.get(
-                "show_elevator_performance", False
-            ),
+            show_elevator_performance=data.get("show_elevator_performance", False),
             show_final_stats=data.get("show_final_stats", True),
         )
 
@@ -87,9 +86,7 @@ class DemoScenarioLoader:
         if config_path is None:
             # Default to config/demo_scenarios.json
             default_path = (
-                Path(__file__).parent.parent.parent
-                / "config"
-                / "demo_scenarios.json"
+                Path(__file__).parent.parent.parent / "config" / "demo_scenarios.json"
             )
             self.config_path = default_path
         else:
@@ -105,18 +102,14 @@ class DemoScenarioLoader:
             with open(self.config_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            self._default_scenario_id = data.get(
-                "default_scenario", "quick_demo"
-            )
+            self._default_scenario_id = data.get("default_scenario", "quick_demo")
 
             for scenario_data in data.get("scenarios", []):
                 scenario = DemoScenario.from_dict(scenario_data)
                 self._scenarios[scenario.id] = scenario
 
         except FileNotFoundError:
-            print(
-                f"Warning: Demo scenarios config not found at {self.config_path}"
-            )
+            print(f"Warning: Demo scenarios config not found at {self.config_path}")
             print("Using built-in defaults")
             self._create_default_scenarios()
         except json.JSONDecodeError as e:

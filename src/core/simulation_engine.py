@@ -15,6 +15,7 @@ from dataclasses import dataclass
 import random
 
 from src.utils.config_loader import get_config
+from src.core.strategy_factory import create_strategy
 from .elevator_simulator import (
     Building,
     Elevator,
@@ -308,12 +309,13 @@ class ElevatorController:
 class TrafficManager:
     """Manages realistic traffic patterns and person generation"""
 
-    def __init__(self, building: Building):
+    def __init__(self, building: Building, time_scale: float = 1.0):
         config = get_config()
         self.building = building
         self.person_generator = PersonGenerator(building)
         self.is_running = False
         self.thread: Optional[threading.Thread] = None
+        self.time_scale = time_scale
 
         # Traffic patterns from config
         self.base_arrival_rate = config.base_arrival_rate
@@ -346,8 +348,10 @@ class TrafficManager:
             rate = self._get_current_traffic_rate(elapsed_minutes)
 
             # Generate people based on Poisson distribution
+            # Scale rate by time_scale: faster simulation = more passengers per wall-clock second
+            scaled_rate = rate / self.time_scale
             if (
-                random.random() < rate / 60
+                random.random() < scaled_rate / 60
             ):  # Convert per-minute to per-second probability
                 person = self.person_generator.generate_person()
                 self.building.add_person_request(person)
@@ -357,7 +361,8 @@ class TrafficManager:
             self.building.process_pending_returns()
 
             config = get_config()
-            time.sleep(config.traffic_check_interval)
+            # Scale sleep interval: faster simulation = check more frequently
+            time.sleep(config.traffic_check_interval * self.time_scale)
 
     def _get_current_traffic_rate(self, elapsed_minutes: float) -> float:
         """Get traffic rate based on time of day simulation"""
@@ -386,8 +391,12 @@ class SimulationEngine:
         debug: bool = False,
         time_scale: float = 1.0,
     ):
-        self.building = Building(num_floors, num_elevators)
-        self.traffic_manager = TrafficManager(self.building)
+        # Create strategy based on config
+        config = get_config()
+        strategy = create_strategy(config.strategy_type)
+
+        self.building = Building(num_floors, num_elevators, strategy=strategy)
+        self.traffic_manager = TrafficManager(self.building, time_scale)
         self.elevator_controllers: List[ElevatorController] = []
         self.debug = debug
         self.time_scale = time_scale  # 1.0 = normal speed, 0.1 = 10x faster
@@ -519,6 +528,10 @@ class SimulationEngine:
                     if j.boarding_time is not None
                 ) / len(recent_journeys)
 
+        # Adjust wait times for time_scale (timestamps are in real time, not simulated time)
+        adjusted_avg_wait = building_status["avg_wait_time"] / self.time_scale
+        adjusted_avg_journey = avg_journey_time / self.time_scale
+
         return {
             "timestamp": current_time,
             "elapsed_time": elapsed_time,
@@ -526,8 +539,8 @@ class SimulationEngine:
             "total_people_completed": self.building.total_people_completed,
             "people_waiting": building_status["total_waiting"],
             "people_in_transit": building_status["total_passengers"],
-            "avg_wait_time": building_status["avg_wait_time"],
-            "avg_journey_time": avg_journey_time,
+            "avg_wait_time": adjusted_avg_wait,
+            "avg_journey_time": adjusted_avg_journey,
             "elevator_stats": elevator_stats,
             "throughput": (
                 self.building.total_people_completed / (elapsed_time / 3600)

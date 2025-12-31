@@ -8,6 +8,8 @@
                 "num_floors": 10,
                 "num_elevators": 3
             },
+            "strategy": "default",
+            "comment_strategy": "Options: default, look, destination_dispatch, ml, adaptive",
             "traffic": {
                 "enabled": true,
                 "automatic": true
@@ -35,6 +37,7 @@
                 "num_floors": 8,
                 "num_elevators": 2
             },
+            "strategy": "default",
             "manual_requests": [
                 {
                     "from_floor": 1,
@@ -82,6 +85,7 @@
                 "num_floors": 12,
                 "num_elevators": 3
             },
+            "strategy": "default",
             "traffic": {
                 "enabled": true,
                 "automatic": true
@@ -108,6 +112,7 @@
                 "num_floors": 6,
                 "num_elevators": 1
             },
+            "strategy": "default",
             "manual_requests": [
                 {
                     "from_floor": 1,
@@ -138,6 +143,7 @@
                 "num_floors": 15,
                 "num_elevators": 3
             },
+            "strategy": "default",
             "traffic": {
                 "enabled": true,
                 "automatic": true

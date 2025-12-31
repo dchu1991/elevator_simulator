@@ -646,7 +646,7 @@ def run_statistics_simulation(
 ):
     """Run simulation focused on statistics collection"""
     sim = SimulationEngine(
-        num_floors=num_floors, num_elevators=num_elevators, time_scale=1.0
+        num_floors=num_floors, num_elevators=num_elevators, time_scale=0.2
     )
     stats = StatisticsTracker(sim)
 

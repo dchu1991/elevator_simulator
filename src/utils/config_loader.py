@@ -48,6 +48,11 @@ class ElevatorConfig:
 
     # Strategy parameters
     @property
+    def strategy_type(self) -> str:
+        """Get the strategy type: default, look, destination_dispatch, ml, adaptive"""
+        return self.config.get("strategy", {}).get("strategy_type", "default")
+
+    @property
     def distance_weight(self) -> float:
         return self.config.get("strategy", {}).get("distance_weight", 1.0)
 

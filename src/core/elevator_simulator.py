@@ -13,6 +13,7 @@ from typing import List, Dict, Set, Optional, Tuple
 from enum import Enum
 from dataclasses import dataclass
 from src.utils.config_loader import get_config
+from src.core.interfaces import ElevatorAssignmentStrategy, ElevatorConfig
 
 
 class Direction(Enum):
@@ -168,21 +169,16 @@ class Elevator:
         elif self.direction == Direction.IDLE:
             # When idle, find ANY destination or request (excluding current floor)
             if self.destination_floors:
-                # Go to nearest destination
-                candidates = [f for f in self.destination_floors if f != current]
-                if candidates:
-                    nearest = min(candidates, key=lambda f: abs(f - current))
-                    return nearest
-            # Then check for requests
-            all_requests = [
+                if candidates := [
+                    f for f in self.destination_floors if f != current
+                ]:
+                    return min(candidates, key=lambda f: abs(f - current))
+            if all_requests := [
                 f
                 for f in list(self.up_requests) + list(self.down_requests)
                 if f != current
-            ]
-            if all_requests:
-                nearest = min(all_requests, key=lambda f: abs(f - current))
-                return nearest
-
+            ]:
+                return min(all_requests, key=lambda f: abs(f - current))
         return None
 
     def update_direction(self):
@@ -266,13 +262,19 @@ class Elevator:
 class Building:
     """Represents the mall building with multiple floors and elevators"""
 
-    def __init__(self, num_floors: int = None, num_elevators: int = None):
+    def __init__(
+        self,
+        num_floors: int = None,
+        num_elevators: int = None,
+        strategy: ElevatorAssignmentStrategy = None,
+    ):
         config = get_config()
         self.num_floors = num_floors if num_floors is not None else config.num_floors
         self.num_elevators = (
             num_elevators if num_elevators is not None else config.num_elevators
         )
         self.elevators: List[Elevator] = []
+        self.strategy = strategy  # ElevatorAssignmentStrategy instance
 
         # Create elevators
         for i in range(self.num_elevators):
@@ -367,8 +369,8 @@ class Building:
     def find_best_elevator(
         self, floor: int, direction: Direction
     ) -> Optional[Elevator]:
-        """Find the most suitable elevator for a request using a
-        scoring algorithm"""
+        """Find the most suitable elevator for a request.
+        Uses strategy if provided, otherwise falls back to scoring algorithm."""
         available_elevators = [
             e for e in self.elevators if e.state != ElevatorState.MAINTENANCE
         ]
@@ -376,6 +378,28 @@ class Building:
         if not available_elevators:
             return None
 
+        # Use strategy if provided
+        if self.strategy is not None:
+            config = get_config()
+            # Convert config to ElevatorConfig
+            elevator_config = ElevatorConfig(
+                num_floors=self.num_floors,
+                num_elevators=self.num_elevators,
+                distance_weight=config.distance_weight,
+                full_penalty=config.full_penalty,
+                same_direction_bonus=config.same_direction_bonus,
+                opposite_direction_penalty=config.opposite_direction_penalty,
+                load_factor_weight=config.load_factor_weight,
+                idle_bonus=config.idle_bonus,
+            )
+            elevator_index = self.strategy.assign_elevator(
+                available_elevators, floor, direction, elevator_config
+            )
+            if elevator_index is not None:
+                return available_elevators[elevator_index]
+            return None
+
+        # Fallback to default scoring algorithm
         best_elevator = None
         best_score = float("inf")
 
