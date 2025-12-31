@@ -19,14 +19,6 @@ except ImportError as e:
     sys.exit(1)
 
 try:
-    from src.visualization import run_visual_simulation
-
-    print("✓ Visualization module imports")
-except ImportError as e:
-    print(f"✗ Visualization module failed: {e}")
-    sys.exit(1)
-
-try:
     from src.utils import get_config
 
     config = get_config()

@@ -11,7 +11,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.core.simulation_engine import SimulationEngine
-from src.core.elevator_simulator import Building, Elevator, Person
+from src.core.elevator_simulator import Building, Person
 from src.utils.config_loader import get_config
 
 

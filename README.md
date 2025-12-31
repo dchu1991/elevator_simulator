@@ -33,6 +33,49 @@ A comprehensive, realistic elevator simulation system for a multi-story mall wit
 - Comparative benchmarking across configurations
 - Wait time optimization and throughput analysis
 
+### 🆕 Advanced Features (NEW!)
+
+#### **Event Bus System** (Observer Pattern)
+
+- Subscribe to simulation events in real-time
+- EventLogger for file-based event logging
+- EventMetrics for statistics collection
+- Thread-safe publish/subscribe
+- **Coverage: 96%** | **Tests: 11**
+
+#### **Advanced Assignment Strategies**
+
+- **LOOK Strategy**: More efficient than SCAN (reverses at last request)
+- **Destination Dispatch**: Groups passengers by destination floor
+- **ML-based Strategy**: Online learning with feedback (learning_rate=0.1)
+- **Adaptive Strategy**: Auto-switches based on traffic patterns
+- **Coverage: 91%** | **Tests: 14**
+
+#### **Performance Benchmarking Framework**
+
+- Compare multiple strategies systematically
+- BenchmarkResult with comprehensive metrics
+- ComparisonReport with winner detection
+- JSON export for analysis
+- **Coverage: 90%** | **Tests: 23**
+
+#### **Data Persistence**
+
+- Record simulations with snapshots and events
+- Save/load recordings (with gzip compression)
+- Replay simulations with callbacks
+- Export to CSV for analysis
+- Compare multiple sessions
+- **Coverage: 98%** | **Tests: 34**
+
+#### **Pydantic Configuration Validation**
+
+- Type-safe configuration with validation
+- Field constraints (min/max, cross-field validation)
+- ConfigFactory with 5 presets (small/medium/large/testing/benchmark)
+- Config file validation and migration
+- **Coverage: 99%** | **Tests: 28**
+
 ## Quick Start
 
 ### Installation
@@ -186,9 +229,11 @@ uv run main.py help
 
 ### Programmatic Usage
 
+#### Basic Simulation
+
 ```python
-from simulation_engine import SimulationEngine
-from visualization import InteractiveController
+from src.core.simulation_engine import SimulationEngine
+from src.visualization.visualization import InteractiveController
 
 # Create simulation
 sim = SimulationEngine(num_floors=20, num_elevators=4)
@@ -205,6 +250,121 @@ print(f"Throughput: {stats['throughput']:.1f} people/hour")
 
 # Stop simulation
 sim.stop_simulation()
+```
+
+#### Using Advanced Features
+
+**Event Bus - Monitor Events**
+
+```python
+from src.core.event_bus import EventBus, EventType
+
+bus = EventBus()
+
+# Subscribe to elevator events
+def on_elevator_moved(event):
+    print(f"Elevator {event.data['elevator_id']} moved to floor {event.data['floor']}")
+
+bus.subscribe(EventType.ELEVATOR_MOVED, on_elevator_moved)
+bus.subscribe(EventType.PASSENGER_PICKED_UP, lambda e: print(f"Picked up passenger {e.data['passenger_id']}"))
+
+# Publish events
+bus.publish(EventType.ELEVATOR_MOVED, {"elevator_id": 1, "floor": 5})
+```
+
+**Benchmarking - Compare Strategies**
+
+```python
+from src.core.benchmarking import QuickBenchmark
+
+# Quick comparison of strategies
+report = QuickBenchmark.quick_compare(
+    strategies=['nearest', 'scan', 'round_robin', 'look', 'adaptive'],
+    duration=60.0
+)
+
+# Print results
+report.print_comparison()
+
+# Get best performer
+winner = report.get_winner('avg_wait_time')
+print(f"Best strategy: {winner.strategy_name}")
+```
+
+**Persistence - Record & Replay**
+
+```python
+from src.core.persistence import SimulationRecorder, SimulationReplayer
+
+# Record a simulation
+recorder = SimulationRecorder(storage_dir='simulation_data')
+recorder.start(
+    config={'num_floors': 20, 'num_elevators': 4},
+    strategy_name='nearest'
+)
+
+# Record snapshots during simulation
+recorder.record_snapshot(snapshot)
+recorder.record_event({'type': 'request', 'floor': 5})
+
+# Finalize and save
+recorder.stop({'total_completed': 100})
+filepath = recorder.save(compress=True)
+
+# Replay later
+replayer = SimulationReplayer(storage_dir='simulation_data')
+replayer.replay(session_id='20250101_120000')
+```
+
+**Validated Config - Type-Safe Configuration**
+
+```python
+from src.core.validated_config import ConfigFactory, ElevatorSystemConfig
+
+# Use presets
+config = ConfigFactory.medium_building()  # 20 floors, 4 elevators
+fast_config = ConfigFactory.fast_testing()  # Optimized for testing
+
+# Save/load configs
+config.save_to_file('my_config.json')
+loaded = ElevatorSystemConfig.load_from_file('my_config.json')
+
+# Validation happens automatically
+try:
+    bad_config = ElevatorSystemConfig(
+        building={'num_floors': 200}  # Too many!
+    )
+except ValidationError as e:
+    print(f"Invalid config: {e}")
+```
+
+**Advanced Strategies**
+
+```python
+from src.core.advanced_strategies import (
+    LOOKStrategy,
+    DestinationDispatchStrategy,
+    MLBasedStrategy,
+    AdaptiveStrategy,
+)
+from src.core.container import create_test_container
+
+# Use LOOK strategy (more efficient than SCAN)
+container = create_test_container(strategy_name='look')
+
+# Or create custom strategy
+look_strategy = LOOKStrategy()
+dispatch_strategy = DestinationDispatchStrategy()
+ml_strategy = MLBasedStrategy(learning_rate=0.1)
+adaptive_strategy = AdaptiveStrategy()  # Auto-switches based on traffic
+
+# Provide feedback for ML strategy
+ml_strategy.provide_feedback(
+    elevator_id=0,
+    request={'floor': 5, 'direction': 'UP'},
+    wait_time=12.5,
+    success=True
+)
 ```
 
 ## Performance Metrics
@@ -305,6 +465,11 @@ uv run pytest
 # Run with coverage report
 uv run pytest --cov=src --cov-report=html
 
+# Run specific test files
+uv run pytest tests/test_event_bus.py -v
+uv run pytest tests/test_benchmarking.py -v
+uv run pytest tests/test_persistence.py -v
+
 # Run only unit tests
 uv run pytest -m unit
 
@@ -315,9 +480,20 @@ uv run pytest -m integration
 uv run pytest -m "not slow"
 ```
 
+**Test Suite Summary:**
+
+| Test File | Tests | Coverage | Status |
+|-----------|-------|----------|--------|
+| test_event_bus.py | 11 | 96% | ✅ |
+| test_advanced_strategies.py | 14 | 91% | ✅ |
+| test_validated_config.py | 28 | 99% | ✅ |
+| test_benchmarking.py | 23 | 90% | ✅ |
+| test_persistence.py | 34 | 98% | ✅ |
+| **Total** | **110** | **40%** | **✅** |
+
 See [tests/README.md](tests/README.md) for detailed testing documentation.
 
-**Current Test Coverage: 41%**
+**Current Overall Coverage: 40%**
 
 ### File Structure
 
@@ -326,7 +502,15 @@ elevator/
 ├── src/
 │   ├── core/
 │   │   ├── elevator_simulator.py   # Core classes (Elevator, Building, Person)
-│   │   └── simulation_engine.py    # Simulation orchestration
+│   │   ├── simulation_engine.py    # Simulation orchestration
+│   │   ├── interfaces.py           # DI interfaces and protocols
+│   │   ├── strategies.py           # Basic assignment strategies
+│   │   ├── container.py            # DI container
+│   │   ├── event_bus.py            # 🆕 Event system (Observer)
+│   │   ├── advanced_strategies.py  # 🆕 Advanced algorithms
+│   │   ├── benchmarking.py         # 🆕 Performance framework
+│   │   ├── persistence.py          # 🆕 Save/replay
+│   │   └── validated_config.py     # 🆕 Pydantic validation
 │   ├── visualization/
 │   │   ├── visualization.py        # ASCII display
 │   │   └── pygame_visualization.py # Pygame graphics
@@ -341,6 +525,12 @@ elevator/
 │   ├── test_config_integration.py  # Config tests
 │   ├── test_movement.py            # Movement tests
 │   ├── test_heavy_load.py          # Stress tests
+│   ├── test_dependency_injection.py # DI tests
+│   ├── test_event_bus.py           # 🆕 Event system tests
+│   ├── test_advanced_strategies.py # 🆕 Strategy tests
+│   ├── test_validated_config.py    # 🆕 Config tests
+│   ├── test_benchmarking.py        # 🆕 Benchmark tests
+│   ├── test_persistence.py         # 🆕 Persistence tests
 │   └── README.md                   # Testing docs
 ├── demos/                          # Demo scripts
 ├── docs/                           # Documentation
@@ -382,9 +572,18 @@ container = create_test_container(
 
 **Available Strategies:**
 
+**Basic Strategies:**
+
 - `NearestCarStrategy`: Default - scores based on distance, load, direction
 - `SCANStrategy`: Elevator continues in same direction (like disk scheduling)
 - `RoundRobinStrategy`: Simple load balancing across elevators
+
+**Advanced Strategies (🆕 NEW):**
+
+- `LOOKStrategy`: Like SCAN but reverses at last request (more efficient)
+- `DestinationDispatchStrategy`: Groups passengers by destination floor
+- `MLBasedStrategy`: Online learning with weighted voting (learning_rate=0.1)
+- `AdaptiveStrategy`: Auto-switches strategies based on traffic patterns
 
 **Benefits:**
 
@@ -408,6 +607,7 @@ container = create_test_container(
 
 - Python 3.8+
 - `pygame>=2.6.1` - For graphical visualization
+- `pydantic>=2.0` - For configuration validation
 - **Development:**
   - `pytest>=8.0.0` - Testing framework
   - `pytest-cov>=4.1.0` - Coverage reporting
@@ -425,11 +625,11 @@ uv sync
 - **Elevator Maintenance**: Scheduled downtime simulation
 - **Emergency Scenarios**: Fire evacuation protocols
 - **Energy Optimization**: Power consumption modeling
-- **Advanced AI**: Machine learning for predictive scheduling
-- **Web Interface**: Browser-based visualization
+- **Web Interface**: Browser-based visualization and control
 - **Multi-building**: Campus or mall complex simulation
 - **Accessibility**: Wheelchair and mobility considerations
 - **Load Balancing**: Dynamic elevator bank management
+- **Real-time API**: WebSocket support for live monitoring
 
 ## Contributing
 

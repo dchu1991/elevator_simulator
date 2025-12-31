@@ -4,7 +4,6 @@ Test elevator movement and request handling
 
 import pytest
 import time
-from src.core.simulation_engine import SimulationEngine
 
 
 @pytest.mark.integration

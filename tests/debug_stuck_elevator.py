@@ -8,7 +8,7 @@ import time
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.core.elevator_simulator import Person, Direction, ElevatorState
+from src.core.elevator_simulator import Person, Direction
 from src.core.simulation_engine import SimulationEngine
 
 

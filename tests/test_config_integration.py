@@ -3,9 +3,7 @@ Test configuration integration and loading
 """
 
 import pytest
-import time
-from src.utils.config_loader import get_config
-from src.core.elevator_simulator import Building, Person, Direction
+from src.core.elevator_simulator import Building, Direction
 from src.core.simulation_engine import TrafficManager
 
 

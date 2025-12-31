@@ -5,6 +5,7 @@ description = "A comprehensive elevator simulation system for multi-story malls 
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
+    "pydantic>=2.10.6",
     "pygame>=2.6.1",
 ]
 

@@ -11,7 +11,12 @@ elevator/
 │   │   ├── simulation_engine.py  # Simulation orchestration
 │   │   ├── interfaces.py         # 🆕 DI interfaces and protocols
 │   │   ├── strategies.py         # 🆕 Elevator assignment strategies
-│   │   └── container.py          # 🆕 DI container
+│   │   ├── container.py          # 🆕 DI container
+│   │   ├── event_bus.py          # 🆕 Event system (Observer pattern)
+│   │   ├── advanced_strategies.py # 🆕 Advanced algorithms (LOOK, Dispatch, ML, Adaptive)
+│   │   ├── benchmarking.py       # 🆕 Performance benchmarking framework
+│   │   ├── persistence.py        # 🆕 Save/replay simulations
+│   │   └── validated_config.py   # 🆕 Pydantic config validation
 │   │
 │   ├── visualization/            # Visualization modules
 │   │   ├── __init__.py
@@ -33,6 +38,11 @@ elevator/
 │   ├── test_realistic_visitors.py
 │   ├── test_heavy_load.py        # Heavy traffic stress test
 │   ├── test_dependency_injection.py  # 🆕 DI tests
+│   ├── test_event_bus.py         # 🆕 Event bus tests (11 tests)
+│   ├── test_advanced_strategies.py   # 🆕 Advanced strategies tests (14 tests)
+│   ├── test_validated_config.py  # 🆕 Config validation tests (28 tests)
+│   ├── test_benchmarking.py      # 🆕 Benchmarking tests (23 tests)
+│   ├── test_persistence.py       # 🆕 Persistence tests (34 tests)
 │   ├── debug_stuck_elevator.py   # Debug utility
 │   └── verify_structure.py       # Structure verification
 │
@@ -108,10 +118,45 @@ from src.visualization.pygame_visualization import run_pygame_simulation
 # Configuration
 from src.utils.config_loader import get_config
 
-# 🆕 Dependency Injection (NEW!)
+# 🆕 Dependency Injection
 from src.core.interfaces import ElevatorConfig, ElevatorAssignmentStrategy
 from src.core.strategies import NearestCarStrategy, SCANStrategy, RoundRobinStrategy
 from src.core.container import Container, create_default_container, create_test_container
+
+# 🆕 Event Bus (Observer Pattern)
+from src.core.event_bus import EventBus, Event, EventType, EventLogger, EventMetrics
+
+# 🆕 Advanced Strategies
+from src.core.advanced_strategies import (
+    LOOKStrategy,
+    DestinationDispatchStrategy,
+    MLBasedStrategy,
+    AdaptiveStrategy,
+)
+
+# 🆕 Benchmarking Framework
+from src.core.benchmarking import (
+    BenchmarkResult,
+    ComparisonReport,
+    StrategyBenchmark,
+    QuickBenchmark,
+)
+
+# 🆕 Data Persistence
+from src.core.persistence import (
+    SimulationSnapshot,
+    SimulationRecording,
+    SimulationPersistence,
+    SimulationRecorder,
+    SimulationReplayer,
+)
+
+# 🆕 Validated Configuration
+from src.core.validated_config import (
+    ElevatorSystemConfig,
+    ConfigFactory,
+    validate_config_file,
+)
 ```
 
 ### Using Dependency Injection
@@ -129,6 +174,37 @@ strategy = container.resolve('strategy')
 container = create_test_container(
     config_overrides={'num_floors': 10, 'elevator_speed': 10.0}
 )
+```
+
+### Using Advanced Features
+
+```python
+# Event Bus - Monitor simulation events
+from src.core.event_bus import EventBus, EventType
+
+bus = EventBus()
+bus.subscribe(EventType.ELEVATOR_MOVED, lambda e: print(f"Elevator {e.data['elevator_id']} moved"))
+bus.publish(EventType.ELEVATOR_MOVED, {"elevator_id": 1, "floor": 5})
+
+# Benchmarking - Compare strategies
+from src.core.benchmarking import QuickBenchmark
+
+report = QuickBenchmark.quick_compare(['nearest', 'scan', 'round_robin'], duration=60.0)
+report.print_comparison()
+
+# Persistence - Record and replay simulations
+from src.core.persistence import SimulationRecorder
+
+recorder = SimulationRecorder()
+recorder.start(config={}, strategy_name='nearest')
+recorder.record_snapshot(snapshot)
+recorder.save()
+
+# Validated Config - Type-safe configuration
+from src.core.validated_config import ConfigFactory
+
+config = ConfigFactory.medium_building()  # Pre-configured preset
+config.save_to_file('my_config.json')
 ```
 
 ## ⚙️ Configuration
@@ -152,9 +228,22 @@ See `docs/CONFIG_GUIDE.md` for detailed configuration documentation.
 
 Tests are organized by functionality:
 
+### Core Tests
+
 - **test_config_integration.py** - Verify config system works
 - **test_movement.py** - Test elevator movement logic
 - **test_realistic_visitors.py** - Test visitor patterns
+- **test_dependency_injection.py** - DI container and strategy tests
+
+### New Feature Tests (110 tests total, all passing ✅)
+
+- **test_event_bus.py** - Event system tests (11 tests, 96% coverage)
+- **test_advanced_strategies.py** - Advanced algorithm tests (14 tests, 91% coverage)
+- **test_validated_config.py** - Pydantic validation tests (28 tests, 99% coverage)
+- **test_benchmarking.py** - Performance benchmarking tests (23 tests, 90% coverage)
+- **test_persistence.py** - Save/replay tests (34 tests, 98% coverage)
+
+**Overall Test Coverage: 40%**
 
 ## 🎨 Visualization Options
 
