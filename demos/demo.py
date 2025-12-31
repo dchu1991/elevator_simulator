@@ -29,7 +29,9 @@ def run_scenario(scenario: DemoScenario):
 
     # Create simulation with context manager
     with SimulationEngine(
-        num_floors=scenario.num_floors, num_elevators=scenario.num_elevators
+        num_floors=scenario.num_floors,
+        num_elevators=scenario.num_elevators,
+        time_scale=0.2,
     ) as sim:
         sim.start_simulation()
 

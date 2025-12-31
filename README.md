@@ -190,24 +190,20 @@ uv run main.py help
 from simulation_engine import SimulationEngine
 from visualization import InteractiveController
 
-# Using context manager (recommended for automatic cleanup)
-with SimulationEngine(num_floors=20, num_elevators=4) as sim:
-    # Start simulation
-    sim.start_simulation()
-
-    # Add manual requests
-    sim.add_manual_request(from_floor=1, to_floor=15)
-
-    # Get statistics
-    stats = sim.get_current_statistics()
-    print(f"Throughput: {stats['throughput']:.1f} people/hour")
-    
-    # Simulation automatically stopped when exiting context
-
-# Or use manual start/stop
+# Create simulation
 sim = SimulationEngine(num_floors=20, num_elevators=4)
+
+# Start simulation
 sim.start_simulation()
-# ... do work ...
+
+# Add manual requests
+sim.add_manual_request(from_floor=1, to_floor=15)
+
+# Get statistics
+stats = sim.get_current_statistics()
+print(f"Throughput: {stats['throughput']:.1f} people/hour")
+
+# Stop simulation
 sim.stop_simulation()
 ```
 
@@ -362,6 +358,51 @@ elevator/
 - `TrafficManager`: Realistic passenger generation
 - `ASCIIDisplay`: Real-time visualization
 - `StatisticsTracker`: Performance analytics
+
+### Design Patterns & Architecture
+
+The system uses modern software design patterns for flexibility and testability:
+
+#### Dependency Injection (NEW! 🎉)
+
+The system now uses **Dependency Injection** for improved testability and flexibility:
+
+```python
+from src.core.container import create_test_container
+
+# Test with different elevator assignment strategies
+container = create_test_container(strategy_name='scan')
+strategy = container.resolve('strategy')
+
+# Override configuration for testing
+container = create_test_container(
+    config_overrides={'num_floors': 5, 'elevator_speed': 10.0}
+)
+```
+
+**Available Strategies:**
+
+- `NearestCarStrategy`: Default - scores based on distance, load, direction
+- `SCANStrategy`: Elevator continues in same direction (like disk scheduling)
+- `RoundRobinStrategy`: Simple load balancing across elevators
+
+**Benefits:**
+
+- ✅ Easy to swap elevator algorithms without code changes
+- ✅ Simple to inject test configurations
+- ✅ Better testability with mock dependencies
+- ✅ Clear separation of concerns
+
+**Documentation:**
+
+- 📖 [Full DI Guide](docs/DEPENDENCY_INJECTION.md) - Complete documentation
+- ⚡ [Quick Start](docs/DI_QUICKSTART.md) - TL;DR version
+- 💡 [Examples](examples/dependency_injection_demo.py) - Usage examples
+- ✅ [Tests](tests/test_dependency_injection.py) - Test cases
+
+**Strategy Pattern**: Pluggable elevator assignment algorithms  
+**Context Manager**: Clean simulation session management  
+**Protocols**: Interface-based design for extensibility
 
 ### Dependencies
 
