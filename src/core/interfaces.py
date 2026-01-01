@@ -55,7 +55,12 @@ class ElevatorAssignmentStrategy(ABC):
 
     @abstractmethod
     def assign_elevator(
-        self, elevators: List, request_floor: int, direction, config: ElevatorConfig
+        self,
+        elevators: List,
+        request_floor: int,
+        direction,
+        config: ElevatorConfig,
+        destination_floor: Optional[int] = None,
     ) -> Optional[int]:
         """
         Assign an elevator to handle a request.
@@ -65,6 +70,7 @@ class ElevatorAssignmentStrategy(ABC):
             request_floor: Floor where request originated
             direction: Direction of travel (UP/DOWN)
             config: Configuration for scoring
+            destination_floor: Optional destination floor for grouping
 
         Returns:
             Index of assigned elevator, or None if no suitable elevator

@@ -169,9 +169,7 @@ class Elevator:
         elif self.direction == Direction.IDLE:
             # When idle, find ANY destination or request (excluding current floor)
             if self.destination_floors:
-                if candidates := [
-                    f for f in self.destination_floors if f != current
-                ]:
+                if candidates := [f for f in self.destination_floors if f != current]:
                     return min(candidates, key=lambda f: abs(f - current))
             if all_requests := [
                 f
@@ -309,7 +307,7 @@ class Building:
             self.waiting_down[floor].append(person)
 
         # Notify elevators of the request
-        self.assign_elevator_to_request(floor, direction)
+        self.assign_elevator_to_request(floor, direction, person.destination_floor)
 
         # If person reached their destination and has visit duration,
         # schedule return
@@ -351,7 +349,9 @@ class Building:
             if original_person.id in self.active_visitors:
                 del self.active_visitors[original_person.id]
 
-    def assign_elevator_to_request(self, floor: int, direction: Direction):
+    def assign_elevator_to_request(
+        self, floor: int, direction: Direction, destination_floor: int = None
+    ):
         """Assign the best available elevator to handle a request"""
         # Check if any elevator already has this request assigned
         for elevator in self.elevators:
@@ -363,11 +363,13 @@ class Building:
                 return
 
         # No elevator assigned yet, find the best one
-        if best_elevator := self.find_best_elevator(floor, direction):
+        if best_elevator := self.find_best_elevator(
+            floor, direction, destination_floor
+        ):
             best_elevator.add_request(floor, direction)
 
     def find_best_elevator(
-        self, floor: int, direction: Direction
+        self, floor: int, direction: Direction, destination_floor: int = None
     ) -> Optional[Elevator]:
         """Find the most suitable elevator for a request.
         Uses strategy if provided, otherwise falls back to scoring algorithm."""
@@ -393,12 +395,15 @@ class Building:
                 idle_bonus=config.idle_bonus,
             )
             elevator_index = self.strategy.assign_elevator(
-                available_elevators, floor, direction, elevator_config
+                available_elevators,
+                floor,
+                direction,
+                elevator_config,
+                destination_floor=destination_floor,
             )
-            if elevator_index is not None:
-                return available_elevators[elevator_index]
-            return None
-
+            return (
+                None if elevator_index is None else available_elevators[elevator_index]
+            )
         # Fallback to default scoring algorithm
         best_elevator = None
         best_score = float("inf")
@@ -415,48 +420,36 @@ class Building:
         self, elevator: Elevator, floor: int, direction: Direction
     ) -> float:
         """Calculate a score for how suitable an elevator is for a request
-        (lower is better)"""
+        (lower is better) - aligned with NearestCarStrategy"""
         config = get_config()
-        distance = abs(elevator.current_floor - floor)
 
-        # Base score is distance (with configurable weight)
+        # Can't assign if full
+        if elevator.is_full:
+            return config.full_penalty
+
+        distance = abs(elevator.current_floor - floor)
         score = distance * config.distance_weight
 
-        # Penalty for being full
-        if elevator.is_full:
-            score += config.full_penalty
+        # Bonus if elevator is idle
+        if elevator.state == ElevatorState.IDLE:
+            score += config.idle_bonus
+
+        # Bonus if elevator is already moving in the right direction
+        # and not too loaded (< 70% capacity)
+        elif (
+            elevator.direction == direction
+            and elevator.passenger_count < elevator.capacity * 0.7
+        ):
+            score += config.same_direction_bonus
+
+        # Penalty if elevator is moving in opposite direction
+        elif elevator.direction not in [Direction.IDLE, direction]:
+            score += config.opposite_direction_penalty
 
         # Consider current load (if load balancing enabled)
         if config.enable_load_balancing:
             load_factor = elevator.passenger_count / elevator.capacity
             score += load_factor * config.load_factor_weight
-
-            # Add penalty based on total pending requests
-            total_requests = (
-                len(elevator.up_requests)
-                + len(elevator.down_requests)
-                + len(elevator.destination_floors)
-            )
-            # Each pending request adds to the score
-            score += total_requests * 3
-
-        # Bonus if elevator is already moving in the right direction
-        # BUT only if it's not too loaded
-        if (
-            elevator.direction == direction
-            and elevator.passenger_count < elevator.capacity * 0.5
-        ):
-            score += config.same_direction_bonus
-
-        # Penalty if elevator is moving in opposite direction
-        if (elevator.direction == Direction.UP and direction == Direction.DOWN) or (
-            elevator.direction == Direction.DOWN and direction == Direction.UP
-        ):
-            score += config.opposite_direction_penalty
-
-        # Bonus for idle elevators - they have no pending work
-        if elevator.direction == Direction.IDLE:
-            score += config.idle_bonus
 
         return score
 

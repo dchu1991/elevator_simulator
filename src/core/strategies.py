@@ -15,7 +15,12 @@ class NearestCarStrategy(ElevatorAssignmentStrategy):
     """Assign nearest available elevator (current default behavior)"""
 
     def assign_elevator(
-        self, elevators: List, request_floor: int, direction, config: ElevatorConfig
+        self,
+        elevators: List,
+        request_floor: int,
+        direction,
+        config: ElevatorConfig,
+        destination_floor: Optional[int] = None,
     ) -> Optional[int]:
         """Assign based on proximity and current load"""
         best_elevator = None
@@ -45,15 +50,13 @@ class NearestCarStrategy(ElevatorAssignmentStrategy):
         if elevator.state == ElevatorState.IDLE:
             score += config.idle_bonus
 
-        # Bonus if going same direction and not too busy
         elif (
             elevator.direction == direction
             and elevator.passenger_count < elevator.capacity * 0.7
         ):
             score += config.same_direction_bonus
 
-        # Penalty if going opposite direction
-        elif elevator.direction != Direction.IDLE and elevator.direction != direction:
+        elif elevator.direction not in [Direction.IDLE, direction]:
             score += config.opposite_direction_penalty
 
         # Add load factor
@@ -71,14 +74,11 @@ class SCANStrategy(ElevatorAssignmentStrategy):
         self, elevators: List, request_floor: int, direction, config: ElevatorConfig
     ) -> Optional[int]:
         """Assign elevator using SCAN algorithm"""
-        # Find elevators moving in same direction
-        same_direction = [
+        if same_direction := [
             (i, e)
             for i, e in enumerate(elevators)
             if e.direction == direction and not e.is_full
-        ]
-
-        if same_direction:
+        ]:
             # Prefer elevator approaching from correct direction
             if direction.value == "UP":
                 candidates = [
@@ -99,14 +99,11 @@ class SCANStrategy(ElevatorAssignmentStrategy):
                     candidates, key=lambda x: abs(x[1].current_floor - request_floor)
                 )[0]
 
-        # Fall back to nearest idle elevator
-        idle_elevators = [
+        if idle_elevators := [
             (i, e)
             for i, e in enumerate(elevators)
             if e.state == ElevatorState.IDLE and not e.is_full
-        ]
-
-        if idle_elevators:
+        ]:
             return min(
                 idle_elevators, key=lambda x: abs(x[1].current_floor - request_floor)
             )[0]

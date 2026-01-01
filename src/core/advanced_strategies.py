@@ -23,7 +23,12 @@ class LOOKStrategy(ElevatorAssignmentStrategy):
     """
 
     def assign_elevator(
-        self, elevators: List, request_floor: int, direction, config: ElevatorConfig
+        self,
+        elevators: List,
+        request_floor: int,
+        direction,
+        config: ElevatorConfig,
+        destination_floor: Optional[int] = None,
     ) -> Optional[int]:
         """Assign elevator using LOOK algorithm"""
         best_elevator = None
@@ -183,7 +188,12 @@ class MLBasedStrategy(ElevatorAssignmentStrategy):
         self.learning_rate = 0.1
 
     def assign_elevator(
-        self, elevators: List, request_floor: int, direction, config: ElevatorConfig
+        self,
+        elevators: List,
+        request_floor: int,
+        direction,
+        config: ElevatorConfig,
+        destination_floor: Optional[int] = None,
     ) -> Optional[int]:
         """Assign elevator using learned weights"""
         best_elevator = None
@@ -317,7 +327,12 @@ class AdaptiveStrategy(ElevatorAssignmentStrategy):
         self.max_history = 100
 
     def assign_elevator(
-        self, elevators: List, request_floor: int, direction, config: ElevatorConfig
+        self,
+        elevators: List,
+        request_floor: int,
+        direction,
+        config: ElevatorConfig,
+        destination_floor: Optional[int] = None,
     ) -> Optional[int]:
         """Assign elevator using adaptive strategy selection"""
         # Record request
@@ -341,10 +356,10 @@ class AdaptiveStrategy(ElevatorAssignmentStrategy):
         if request_rate < 10:
             # Light traffic - use simple nearest
             return self.nearest.assign_elevator(
-                elevators, request_floor, direction, config
+                elevators, request_floor, direction, config, destination_floor
             )
         else:
             # Heavy traffic - use LOOK
             return self.look.assign_elevator(
-                elevators, request_floor, direction, config
+                elevators, request_floor, direction, config, destination_floor
             )

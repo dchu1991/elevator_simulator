@@ -49,6 +49,7 @@ class ElevatorController:
         building: Building,
         debug: bool = False,
         time_scale: float = 1.0,
+        strategy=None,
     ):
         self.elevator = elevator
         self.building = building
@@ -56,6 +57,7 @@ class ElevatorController:
         self.thread: Optional[threading.Thread] = None
         self.debug = debug
         self.time_scale = time_scale
+        self.strategy = strategy
 
         # Event queue for this elevator
         self.event_queue: PriorityQueue = PriorityQueue()
@@ -64,6 +66,10 @@ class ElevatorController:
         self.idle_time = 0
         self.active_time = 0
         self.last_activity_time = time.time()
+
+        # Track assignments for ML-based strategy
+        # person_id -> assignment_idx
+        self.pending_assignments: Dict[int, int] = {}
 
     def start(self):
         """Start the elevator controller in a separate thread"""
@@ -243,6 +249,39 @@ class ElevatorController:
                     current_floor, Direction.DOWN, [person]
                 )
 
+            # Track for DestinationDispatchStrategy
+            if self.strategy is not None:
+                from src.core.advanced_strategies import (
+                    DestinationDispatchStrategy,
+                    MLBasedStrategy,
+                )
+
+                if isinstance(self.strategy, DestinationDispatchStrategy):
+                    # Register destination when passenger boards
+                    self.strategy.register_destination(
+                        self.elevator.id - 1,  # Convert to 0-indexed
+                        current_floor,
+                        person.destination_floor,
+                    )
+
+                if isinstance(self.strategy, MLBasedStrategy) and len(self.strategy.assignment_history) > 0:
+                    assignment_idx = len(self.strategy.assignment_history) - 1
+                    # Record wait time and update from feedback
+                    wait_time = person.wait_time
+                    self.strategy.update_from_feedback(wait_time, assignment_idx)
+
+        # Track destination clearing for DestinationDispatchStrategy
+        if self.strategy is not None and passengers_leaving:
+            from src.core.advanced_strategies import DestinationDispatchStrategy
+
+            if isinstance(self.strategy, DestinationDispatchStrategy):
+                for person in passengers_leaving:
+                    # Clear destination when passenger reaches their floor
+                    self.strategy.clear_destination(
+                        self.elevator.id - 1,  # Convert to 0-indexed
+                        person.destination_floor,
+                    )
+
         # Check if there are still people waiting after boarding
         # Only remove requests if the waiting area is now empty
         still_waiting_up = len(
@@ -404,7 +443,11 @@ class SimulationEngine:
         # Create controllers for each elevator
         for elevator in self.building.elevators:
             controller = ElevatorController(
-                elevator, self.building, debug=debug, time_scale=time_scale
+                elevator,
+                self.building,
+                debug=debug,
+                time_scale=time_scale,
+                strategy=strategy,
             )
             self.elevator_controllers.append(controller)
 
