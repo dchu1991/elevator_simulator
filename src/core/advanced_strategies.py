@@ -126,13 +126,13 @@ class DestinationDispatchStrategy(ElevatorAssignmentStrategy):
             if i in self.elevator_destinations:
                 destinations = self.elevator_destinations[i]
                 # If any destination within 3 floors, group together
-                if any(abs(dest - destination_floor) <= 3 for dest in destinations):
-                    # Also check elevator is going right direction
-                    if (
-                        elevator.direction == direction
-                        or elevator.state == ElevatorState.IDLE
-                    ):
-                        return i
+                if any(
+                    abs(dest - destination_floor) <= 3 for dest in destinations
+                ) and (
+                    elevator.direction == direction
+                    or elevator.state == ElevatorState.IDLE
+                ):
+                    return i
 
         return None
 

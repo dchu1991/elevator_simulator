@@ -18,7 +18,7 @@ class NearestCarStrategy(ElevatorAssignmentStrategy):
         self,
         elevators: List,
         request_floor: int,
-        direction,
+        direction: Direction,
         config: ElevatorConfig,
         destination_floor: Optional[int] = None,
     ) -> Optional[int]:
@@ -71,7 +71,12 @@ class SCANStrategy(ElevatorAssignmentStrategy):
     """SCAN algorithm - elevator continues in direction until no more requests"""
 
     def assign_elevator(
-        self, elevators: List, request_floor: int, direction, config: ElevatorConfig
+        self,
+        elevators: List,
+        request_floor: int,
+        direction: Direction,
+        config: ElevatorConfig,
+        destination_floor: Optional[int] = None,
     ) -> Optional[int]:
         """Assign elevator using SCAN algorithm"""
         if same_direction := [
@@ -125,7 +130,12 @@ class RoundRobinStrategy(ElevatorAssignmentStrategy):
         self.last_assigned = -1
 
     def assign_elevator(
-        self, elevators: List, request_floor: int, direction, config: ElevatorConfig
+        self,
+        elevators: List,
+        request_floor: int,
+        direction: Direction,
+        config: ElevatorConfig,
+        destination_floor: Optional[int] = None,
     ) -> Optional[int]:
         """Assign next elevator in round-robin fashion"""
         num_elevators = len(elevators)

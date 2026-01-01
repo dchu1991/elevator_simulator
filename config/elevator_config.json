@@ -9,8 +9,8 @@
     },
     "strategy": {
         "description": "Elevator assignment scoring weights (lower score = better choice)",
-        "strategy_type": "destination_dispatch",
-        "comment_strategy_type": "Options: default, look, destination_dispatch, ml, adaptive",
+        "strategy_type": "round_robin",
+        "comment_strategy_type": "Options: default, scan, round_robin, look, destination_dispatch, ml, adaptive",
         "distance_weight": 1.0,
         "comment_distance": "Multiplier for distance score. Higher = distance matters more",
         "full_penalty": 50,
