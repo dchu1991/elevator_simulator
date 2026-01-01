@@ -23,3 +23,10 @@ htmlcov/
 
 # Local setup instructions
 SETUP_REMOTE.md
+
+# IDE configurations
+.vscode/
+
+# Logs and databases
+benchmarks_results/
+
