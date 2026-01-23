@@ -28,5 +28,5 @@ SETUP_REMOTE.md
 .vscode/
 
 # Logs and databases
-benchmarks_results/
+benchmark_results/
 

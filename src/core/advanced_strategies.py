@@ -54,22 +54,28 @@ class LOOKStrategy(ElevatorAssignmentStrategy):
         """Calculate LOOK score - prefer elevators serving requests in same direction"""
         distance = abs(elevator.current_floor - request_floor)
 
+        # Base score on distance and direction
         # Idle elevator - very good
         if elevator.state == ElevatorState.IDLE:
-            return distance * 0.5  # Low score = high priority
-
+            score = distance * 0.5  # Low score = high priority
         # Moving in same direction and will pass this floor
-        if elevator.direction == direction:
+        elif elevator.direction == direction:
             if direction.value == "UP" and elevator.current_floor <= request_floor:
-                # Will pick up on the way
-                return distance * 0.7
+                score = distance * 0.7  # Will pick up on the way
             elif direction.value == "DOWN" and elevator.current_floor >= request_floor:
-                # Will pick up on the way
-                return distance * 0.7
+                score = distance * 0.7  # Will pick up on the way
+            else:
+                score = distance * 2.0 + 100  # Won't pass this floor
+        else:
+            # Moving opposite direction or won't pass this floor
+            score = distance * 2.0 + 100  # Higher score = lower priority
 
-        # Moving opposite direction or won't pass this floor
-        # Will need to reverse first
-        return distance * 2.0 + 100  # Higher score = lower priority
+        # Add load balancing consideration
+        if config.enable_load_balancing:
+            load_factor = elevator.passenger_count / elevator.capacity
+            score += load_factor * config.load_factor_weight
+
+        return score
 
 
 class DestinationDispatchStrategy(ElevatorAssignmentStrategy):
@@ -118,6 +124,8 @@ class DestinationDispatchStrategy(ElevatorAssignmentStrategy):
         self, elevators, request_floor, destination_floor, direction, config
     ) -> Optional[int]:
         """Find elevator serving similar destinations"""
+        candidates = []
+
         for i, elevator in enumerate(elevators):
             if elevator.is_full:
                 continue
@@ -132,12 +140,22 @@ class DestinationDispatchStrategy(ElevatorAssignmentStrategy):
                     elevator.direction == direction
                     or elevator.state == ElevatorState.IDLE
                 ):
-                    return i
+                    # Consider load balancing
+                    if config.enable_load_balancing:
+                        load_factor = elevator.passenger_count / elevator.capacity
+                        # Prefer less loaded elevators
+                        candidates.append((i, load_factor))
+                    else:
+                        return i  # Return first match if no load balancing
+
+        # Return least loaded candidate
+        if candidates:
+            return min(candidates, key=lambda x: x[1])[0]
 
         return None
 
     def _assign_nearest(self, elevators, request_floor, config) -> Optional[int]:
-        """Fallback to nearest available elevator"""
+        """Fallback to nearest available elevator with load balancing"""
         available = [(i, e) for i, e in enumerate(elevators) if not e.is_full]
 
         if not available:
@@ -145,11 +163,22 @@ class DestinationDispatchStrategy(ElevatorAssignmentStrategy):
 
         # Prefer idle elevators
         idle = [(i, e) for i, e in available if e.state == ElevatorState.IDLE]
+        search_set = idle if idle else available
 
-        if idle:
-            return min(idle, key=lambda x: abs(x[1].current_floor - request_floor))[0]
+        # Calculate score considering distance and load
+        def calc_score(idx_elevator):
+            i, e = idx_elevator
+            distance = abs(e.current_floor - request_floor)
+            score = distance
 
-        return min(available, key=lambda x: abs(x[1].current_floor - request_floor))[0]
+            # Add load balancing
+            if config.enable_load_balancing:
+                load_factor = e.passenger_count / e.capacity
+                score += load_factor * config.load_factor_weight
+
+            return score
+
+        return min(search_set, key=calc_score)[0]
 
     def register_destination(
         self, elevator_idx: int, request_floor: int, destination_floor: int
